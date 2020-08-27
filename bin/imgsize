@@ -1,0 +1,21 @@
+#!/usr/bin/env perl
+
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+
+use Image::Info;
+use Image::Info::JPEG2000;
+use Time::HiRes qw(time);
+use Data::Dumper;
+
+my $filename = shift @ARGV;
+my $t0 = time();
+my $output;
+if ( $filename =~ m,\.jp2, ) {
+  my $info = Image::Info::JPEG2000::ImageInfo($filename);
+  $output = qq{$$info{width}x$$info{height}x$$info{levels}};
+} else {
+  my $info = Image::Info::image_info($filename);
+  $output = qq{$$info{width}x$$info{height}};
+}
+print $output, "\n";

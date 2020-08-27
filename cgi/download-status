@@ -1,0 +1,92 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use File::Basename qw(dirname);
+use IO::File;
+autoflush STDOUT 1;
+
+use Plack::Runner;
+
+use Plack::Request;
+use Plack::Response;
+
+use JSON::XS;
+use File::Basename qw(basename);
+use Time::HiRes qw(stat);
+
+use File::Slurp qw();
+
+use lib "$ENV{SDRROOT}/mdp-lib/Utils";
+use Vendors __FILE__;
+
+use Identifier;
+use SRV::Globals;
+
+
+BEGIN {
+    $ENV{PLACK_ENV} = ( defined $ENV{HT_DEV} ) ? 'development' : 'production';
+}
+
+our $ROOT = join('/', 
+    $ENV{SDRROOT},
+    ( defined $ENV{SDRVIEW} && ($ENV{SDRVIEW} eq 'full' ) ? 'cache-full' : 'cache'),
+    'download'
+);
+
+my $app = sub {
+    my $env = shift;
+    my $request = Plack::Request->new($env);
+    my $response;
+
+    my $marker = $request->param('marker');
+    my $id = $request->param('id');
+
+    my $progress_basename = $marker . q{__progress};
+
+    my $status_path;
+
+    if ( $marker =~ m,^$SRV::Globals::gMarkerPrefix, ) {
+        $status_path = join('/', $ROOT, $marker, $progress_basename); 
+    } else {
+        $status_path = join('/', $ROOT, Identifier::get_pairtree_id_with_namespace($id), $progress_basename);
+    }
+    opendir(my $status_dh, $status_path) || die "$status_path: $!";
+
+    my $sort = sub {
+        my ( $a, $b ) = @_;
+        my $ts_a = (stat "$status_path/$a" )[10];
+        my $ts_b = (stat "$status_path/$b" )[10];
+        return ( $ts_a <=> $ts_b );
+    };
+
+    my @filenames = sort { $sort->($b, $a) } grep(!/^\./, readdir($status_dh));
+    closedir($status_dh);
+
+    my $current_status_filename = $filenames[0];
+    # my $content_type = ( $current_status_filename =~ m,\.html, ) ? "text/html" : "text/plain";
+    my $content_type = ( $current_status_filename =~ m,\.js, ) ? "text/html" : "text/plain";
+    open(my $fh, "$status_path/$current_status_filename");
+
+    if ( $request->param('debug') ) {
+        $content_type = 'application/javascript';
+        $fh = [ $current_status_filename ];
+        foreach my $filename ( @filenames ) {
+            my $ts = (stat("$status_path/$filename"))[10];
+            push @$fh, [ $filename, $ts ];
+        }
+        $fh = [ JSON::XS::encode_json($fh) ];
+    }
+
+
+    $response = Plack::Response->new(200);
+    $response->content_type($content_type);
+    $response->header('Access-Control-Allow-Origin' => '*');
+    $response->body($fh);
+
+    return $response->finalize;
+
+};
+
+Plack::Runner->new->run($app);

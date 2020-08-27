@@ -1,0 +1,26 @@
+#
+# RDIST Application Timestamp Distribution File
+#
+# PURPOSE: deploy rdist.timestamp from test.babel.hathitrust.org to
+# production. rdist.timestamp is in the except_pat of rdist.app. This
+# script runs AFTER app rdist has completed so it's the NEW code that
+# is restarted by plack.
+#
+# Destination Servers
+#
+NASMACC = ( nas-macc.umdl.umich.edu )
+NASICTC = ( nas-ictc.umdl.umich.edu )
+
+#
+# File Directories to be released (source) and (destination)
+#
+APP_timestamp_src  = ( /htapps/test.babel/imgsrv/bin/rdist.timestamp )
+APP_timestamp_dest = ( /htapps/babel/imgsrv/bin/rdist.timestamp )
+
+#
+# Release instructions
+#
+( ${APP_timestamp_src} ) -> ( ${NASMACC} ${NASICTC} )
+        install -oremove ${APP_timestamp_dest};
+        notify hathitrust-release@umich.edu ;
+

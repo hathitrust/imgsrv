@@ -1,0 +1,30 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+
+BEGIN {
+    $ENV{DEBUG_LOCAL} = 1;
+}
+
+use FindBin;
+
+use lib "$ENV{SDRROOT}/mdp-lib/Utils";
+use Vendors __FILE__;
+
+use Data::Dumper;
+
+use Plack::Util;
+use Process::Image;
+
+use Plack::App::Command;
+
+my @config = (
+    "id=s",
+    "file=s",
+);
+
+$ENV{PSGI_ACTION} = 'html';
+
+my $app = Plack::Util::load_psgi("$FindBin::Bin/../apps/imgsrv.psgi");
+Plack::App::Command->run("", \@config, $app);
+

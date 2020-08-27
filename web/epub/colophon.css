@@ -1,0 +1,53 @@
+.about-book img {
+    max-width: 600px;
+}
+
+.about-book {
+    font-size: 14px;
+    width: 80%;
+    margin: 0 auto;
+}
+
+.about-book .metadata {
+    font-weight: bold;
+}
+
+.about-book p.image {
+    text-align: center;
+}
+
+.about-book p.image img {
+    width: auto;
+    max-width: 100%;
+}
+
+.about-book blockquote {
+    font-size: 10px;
+}
+
+.about-book .warning {
+    font-weight: bold;
+    border: 1px solid #ccc;
+    padding: 8px;
+}
+
+p.watermark:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+img.watermark-digitized {
+  float: left;
+  max-width: 300px;
+}
+
+img.watermark-original {
+  float: right;
+  max-width: 300px;
+}
+
+body.pre-paginated {
+  margin: 0;
+  padding: 0;
+}

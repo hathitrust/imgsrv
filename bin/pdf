@@ -1,0 +1,53 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+
+BEGIN {
+   ## $ENV{DEBUG_LOCAL} = 1;
+}
+
+
+use FindBin;
+
+use lib "$ENV{SDRROOT}/mdp-lib/Utils";
+use Vendors __FILE__;
+
+use Data::Dumper;
+
+use File::Basename qw(basename);
+
+use Plack::Util;
+use Process::Image;
+
+use Plack::App::Command;
+
+use SRV::Utils;
+
+my @config = (
+    "id=s",
+    "seq=s@",
+    "output_filename=s",
+    "progress_filepath=s",
+    "download_url=s",
+    "cache_dir=s",
+    "action=s",
+    "format=s",
+    "target_ppi=s",
+    "quality=s",
+    "super",
+    "force",
+);
+
+$ENV{PSGI_ACTION} = basename(__FILE__);
+
+print STDERR "RUNNING $ENV{PSGI_ACTION} : $$\n";
+
+my $app = Plack::Util::load_psgi("$FindBin::Bin/../apps/download.psgi");
+my $output_filename = Plack::App::Command->run("", \@config, $app);
+if ( $ENV{PSGI_ACTION} eq 'pdf' && $output_filename ) {
+    my $size = ( -s $output_filename );
+    $output_filename =~ s,$ENV{SDRROOT}/,,;
+    # SRV::Utils::log_string('build', join('|', "size=$size", "filename=$output_filename"));
+    SRV::Utils::log_string('downloads', [['size',$size],['filename',$output_filename],['mode','build']]);
+}
+

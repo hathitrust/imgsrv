@@ -1,0 +1,24 @@
+#!/usr/bin/env perl
+use strict;
+
+use IPC::Run qw(run);
+use File::Basename qw(basename dirname);
+
+my $reduce = shift @ARGV;
+my $image_filename = shift @ARGV;
+my $final_filename = shift @ARGV;
+
+my $tmp_dirname = dirname($image_filename);
+
+chdir($tmp_dirname);
+
+## kdu_expand cannot expand into directories with ... commas!
+my $tmp_filename = time() .  '-' .  $$ . '.tif';
+
+IPC::Run::run([ "/l/local/bin/kdu_expand", "-num_threads", "0", "-quiet", "-i", $image_filename, "-o", $tmp_filename, "-reduce", "$reduce" ]);
+IPC::Run::run([ "/l/local/bin/kdu_compress", "-num_threads", "0", "-quiet", "-i", $tmp_filename, "-o", "$final_filename", "-slope", "42988" ]);
+
+unlink $tmp_filename or warn "Could not unlink $tmp_filename - $!";
+unlink $image_filename or warn "Could not unlink $image_filename - $!";
+
+

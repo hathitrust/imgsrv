@@ -1,0 +1,25 @@
+#!/usr/bin/env /l/local/bin/plackup
+
+#### #!/usr/bin/env /htapps/roger.babel/sandbox/bin/plackup
+
+### #!/usr/bin/env /l/local/bin/plackup
+
+use strict;
+use warnings;
+
+BEGIN {
+   # $ENV{DEBUG_LOCAL} = 1;
+}
+
+use Plack::Util;
+
+use lib "$ENV{SDRROOT}/mdp-lib/Utils";
+use Vendors __FILE__;
+
+use strict;
+use warnings;
+
+use FindBin;
+use Plack::Util;
+
+my $app = Plack::Util::load_psgi("$FindBin::Bin/../apps/download.psgi");

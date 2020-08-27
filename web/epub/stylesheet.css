@@ -1,0 +1,26 @@
+body.pre-paginated div.ocr_page {
+  position: absolute !important;
+  height: 1px; width: 1px;
+  overflow: hidden;
+  clip: rect(1px, 1px, 1px, 1px);
+}
+
+body.pre-paginated {
+  margin: 0;
+  padding: 0;
+}
+
+body.pre-paginated figure {
+  padding: 0;
+  margin: 0;
+}
+
+[data-line-break] + [data-line-break] {
+  display: block;
+}
+
+[data-end-paragraph]::after {
+  content: "";
+  display: table;
+  margin-bottom: 1rem;
+}

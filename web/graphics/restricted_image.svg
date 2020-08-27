@@ -1,0 +1,15 @@
+<svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+ <!-- width=683 height=1021 -->
+ <!-- Created with Method Draw - http://github.com/duopixel/Method-Draw/ -->
+ <g>
+  <title>background</title>
+  <rect fill="#666666" id="canvas_background" height="${HEIGHT}" width="${WIDTH}" y="0" x="0"/>
+  <g display="none" overflow="visible" y="0" x="0" height="100%" width="100%" id="canvasGrid">
+   <rect fill="url(#gridpattern)" stroke-width="0" y="0" x="0" height="100%" width="100%"/>
+  </g>
+ </g>
+ <g>
+  <title>Layer 1</title>
+  <text stroke="#0f0f00" font-weight="bold" xml:space="preserve" text-anchor="middle" font-family="'Trebuchet MS', Gadget, sans-serif" font-size="${FONT_SIZE}" id="svg_2" y="50%" x="50%" stroke-width="0" fill="#fff">RESTRICTED</text>
+ </g>
+</svg>
