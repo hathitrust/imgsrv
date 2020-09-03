@@ -15,6 +15,7 @@ use Plack::Util::Accessor qw(
   document
   output_filename
   marginalia_width
+  watermark_height
 );
 
 use Data::Dumper;
@@ -66,6 +67,7 @@ sub start_initialization {
     $watermark_pdf->mediabox('Letter');
 
     $self->marginalia_width(0);
+    $self->watermark_height(0);
 
     $self->document($watermark_pdf);
 }
@@ -129,7 +131,8 @@ sub setup_generated_message {
     IPC::Run::run [
       $Process::Globals::convert,
       "-fill", '#C0C0C0', # ( $self->debug ? '#B1B1B1' : 'rgba(177,177,177, 0.35)' ), #'#B1B1B1',
-      "-background", "transparent",
+      "-background", "white",
+      # "-background", "transparent",
       "-font", $font,
       "-density", "144",
       "-pointsize", "14",
@@ -295,24 +298,27 @@ sub setup_stamp_page {
 
     $self->insert_generated_message($page);
 
+    my $watermark_height = 0;
     if ( $self->watermark ) {
 
         my ($center_x, $center_y, $wm_margin_y);
         ($center_x, $center_y) = ($x1 / 4, $y1 / 4);
-        $wm_margin_y = 30;
+        $wm_margin_y = 0; # 30;
 
         ( $watermark_digitized, $watermark_original ) = SRV::Utils::get_watermark_filename($mdpItem, { size => 100 });
-    
+
         eval {
             my $image = $page->gfx();
 
             if (defined($watermark_digitized)) {
-                $watermark_digitized = $watermark_pdf->image_png("$watermark_digitized.png");
+                $watermark_digitized = $watermark_pdf->image_png("$watermark_digitized.flat.png");
+                $watermark_height = $watermark_digitized->height;
                 $self->draw_image($image, $watermark_digitized, $center_x, $wm_margin_y);
             }
 
             if (defined($watermark_original)) {
-                $watermark_original = $watermark_pdf->image_png("$watermark_original.png");
+                $watermark_original = $watermark_pdf->image_png("$watermark_original.flat.png");
+                $watermark_height = $watermark_original->height if ( $watermark_original->height > $watermark_height );
                 $self->draw_image($image, $watermark_original, ( $center_x * 2 ) + $center_x, $wm_margin_y);
             }
         };
@@ -320,6 +326,7 @@ sub setup_stamp_page {
             print STDERR "!! $err\n";
         }
     }
+    $self->watermark_height($watermark_height);
 }
 
 sub draw_image {
