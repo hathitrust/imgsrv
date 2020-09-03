@@ -9,11 +9,7 @@ use File::Basename qw(dirname basename fileparse);
 use File::stat;
 use File::Copy;
 
-## use Image::ExifTool;
-use Image::Info::JPEG2000;
-use Image::Info;
-
-## use Image::Size qw(imgsize);
+use Image::Utils;
 
 use Data::Dumper;
 
@@ -23,6 +19,7 @@ use Plack::Util::Accessor qw(
     mdpItem
     region
     size
+    target_ppi
     rotation
     quality
     format
@@ -68,6 +65,7 @@ sub new {
     $self->rotation($$options{rotation} || 0);
     $self->format($$options{format} || 'image/jpeg');
     $self->quality($$options{quality} || 'default');
+    $self->target_ppi($$options{target_ppi} || 0);
     $self;
 }
 
@@ -228,6 +226,15 @@ sub _setup_sizing {
 
     my $sizing = {};
 
+    if ( $size =~ m,^ppi:\d, ) {
+        my ( $target_ppi ) = $size =~ m{^ppi:(\d+)};
+        my $meta = Image::Utils::resize($info, $target_ppi);
+        my ( $target_w, $target_h ) = ( $$meta{width}, $$meta{height} );
+        $size = qq{!$target_w,$target_h};
+        $self->target_ppi($target_ppi);
+    }
+
+
     if ( $size =~ m,^!, ) {
         $size = substr($size, 1);
         $do_best_fit = 1;
@@ -321,6 +328,7 @@ sub _setup_sizing {
     }
     
     $$sizing{size} = $pt_size if ( $pt_size );
+    $$sizing{XResolution} = $$sizing{YResolution} = $self->target_ppi if ( $self->target_ppi );
     $self->output->{metadata} = $sizing;
 }
 
@@ -415,32 +423,41 @@ sub _process_source {
 sub _process_output {
     my $self = shift;
     my $mimetype = $self->output->{mimetype};
-    my $xres = $self->source->{metadata}->{XResolution};
-    my $yres = $self->source->{metadata}->{YResolution};
+    my $xres = $self->output->{metadata}->{XResolution} || $self->source->{metadata}->{XResolution};
+    my $yres = $self->output->{metadata}->{YResolution} || $self->source->{metadata}->{YResolution};
     my @cmd;
 
-    if ( defined $self->quality ) {
-        if ( $self->quality eq 'gray' ) {
-            $self->_add_step(["$Process::Globals::ppmtopgm"]);
-        } elsif ( $self->quality eq 'bitonal' ) {
-            $self->_add_step(["$Process::Globals::ppmtopgm"]);
-            $self->_add_step(["$Process::Globals::pamthreshold"]);
-        }
+    if ( $self->quality eq 'gray' ) {
+        $self->_add_step(["$Process::Globals::ppmtopgm"]);
+    } elsif ( $self->quality eq 'bitonal' ) {
+        $self->_add_step(["$Process::Globals::ppmtopgm"]);
+        $self->_add_step(["$Process::Globals::pamthreshold"]);
     }
 
     if ( $mimetype eq 'image/tiff' ) {
         my @args;
-        if ( ( $self->source->{metadata}->{colorspace} && $self->source->{metadata}->{colorspace} eq 'grayscale' ) || ( defined $self->quality && $self->quality =~ m,gray|bitonal, ) ) {
+        if ( $self->_is_grayscale($self->source->{metadata}) || $self->quality =~ m,gray|bitonal, ) {
             $self->_add_step(["$Process::Globals::ppmtopgm"]);
-            push @args, '-flate', '-miniswhite' if ( $self->quality eq 'bitonal' );
+
+            if ( $self->quality eq 'bitonal' || $self->_is_bitonal($self->source->{metadata}) ) {
+                $self->_add_step(["$Process::Globals::pamthreshold"]);
+
+                push @args, '-g4';
+                if ( $self->source->{metadata}->{PhotometricInterpretation} && 
+                     $self->source->{metadata}->{PhotometricInterpretation} eq 'WhiteIsZero' ) {
+                    push @args, '-miniswhite';
+                } else {
+                    push @args, '-minisblack';
+                }
+            }
         }
         $self->_add_step([$Process::Globals::pnmtotiff, @args])
     } elsif ( $mimetype eq 'image/png' ) {
-        if ( ( $self->source->{metadata}->{colorspace} && $self->source->{metadata}->{colorspace} eq 'grayscale' ) || ( defined $self->quality && $self->quality =~ m,gray|bitonal, ) ) {
+        if ( $self->_is_grayscale($self->source->{metadata}) || $self->quality =~ m,gray|bitonal, ) {
             $self->_add_step(["$Process::Globals::ppmtopgm"]);
         }
         ### $self->_add_step(["$Process::Globals::pamrgbatopng"]);
-        @cmd = ( "$Process::Globals::pnmtopng", "-compression", "1" );
+        @cmd = ( "$Process::Globals::pnmtopng", "-compression", $ENV{TERM} ? 9 : 1 );
         if ( $xres && $yres ) {
             # convert in to m
             $xres = ( $xres * 2.54 ) / 100;
@@ -641,11 +658,11 @@ sub _get_file_info {
     $$hash{pathname} = $pathname;
     $$hash{suffix} = $suffix;
     $$hash{mimetype} = $$mime_data{MT_type};
-    my $t0 = time();
+
     if ( -s $$hash{filename} && $do_get_metadata ) {
         my $info;
+        $info = Image::Utils::image_info($$hash{filename});
         if ( $$hash{mimetype} eq 'image/jp2' ) {
-            $info = Image::Info::JPEG2000::image_info($$hash{filename});
             $$hash{metadata} = {
                 width => $$info{width},
                 height => $$info{height},
@@ -654,40 +671,50 @@ sub _get_file_info {
                 YResolution => $$info{YResolution},
                 levels => $$info{levels} || _get_levels($info)
             };
-        # } elsif ( $ENV{USE_EXIFTOOL} ) {
-        #     $info = Image::ExifTool::ImageInfo($$hash{filename});
-        #     $$hash{metadata} = {
-        #         width => $$info{ImageWidth},
-        #         height => $$info{ImageHeight},
-        #         colorspace => $$info{ColorSpace} || '',
-        #     };
         } else {
-            $info = Image::Info::image_info($$hash{filename});
             $$hash{metadata} = {
                 width => $$info{width},
                 height => $$info{height},
-                colorspace => $$info{color_type} || '',
+                colorspace => $$info{ColorSpace} || '',
                 XResolution => $$info{XResolution} ? $$info{XResolution}->as_float : undef,
                 YResolution => $$info{YResolution} ? $$info{YResolution}->as_float : undef,
-                bits_per_sample => $$info{BitsPerSample},
+                SamplesPerPixel => $$info{SamplesPerPixel},
+                BitsPerSample => $$info{BitsPerSample},
+                PhotometricInterpretation => $$info{PhotometricInterpretation},
             };
-        }
-        unless ( $$hash{metadata}{levels} ) {
-            $$hash{metadata}{levels} = _get_levels($$hash{metadata});
+
+            $$hash{metadata}{colorspace} = 'Grayscale' 
+                if ( ! $$hash{metadata}{colorspace} && $$info{SamplesPerPixel} == 1 && $$hash{metadata}{BitsPerSample} == 1 );
+
+            unless ( $$hash{metadata}{levels} ) {
+                $$hash{metadata}{levels} = _get_levels($$hash{metadata});
+            }
         }
     }
+
+
+}
+
+sub _is_grayscale {
+    my $self = shift;
+    my ( $info ) = @_;
+    return $$info{colorspace} && 
+        ( $$info{colorspace} eq 'Grayscale' || 
+          $$info{colorspace} eq 'sLUM' );
+}
+
+sub _is_bitonal {
+    my $self = shift;
+    my ( $info ) = @_;
+    return $$info{SamplesPerPixel} && $$info{SamplesPerPixel} == 1 && 
+        $$info{BitsPerSample} && $$info{BitsPerSample} == 1;
 }
 
 sub imgsize {
     my $filename = shift;
     my ( $w, $h );
-    if ( $filename =~ m,\.jp2, ) {
-        my $info = Image::Info::JPEG2000::ImageInfo($filename);
-        ( $w, $h ) = ( $$info{width}, $$info{height} );
-    } else {
-        my $info = Image::Info::image_info($filename);
-        ( $w, $h ) = ( $$info{width}, $$info{height} );
-    }
+    my $info = Image::Utils::image_info($filename);
+    ( $w, $h ) = ( $$info{width}, $$info{height} );
     return ( $w, $h );
 }
 
