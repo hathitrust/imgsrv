@@ -4,3 +4,9 @@
 [submodule "vendor/slip-lib/lib"]
 	path = vendor/slip-lib/lib
     url = git@github.com:hathitrust/slip-lib.git
+[submodule "vendor/plack-lib/lib"]
+	path = vendor/plack-lib/lib
+	url = git@github.com:hathitrust/plack-lib.git
+[submodule "vendor/common-lib/lib"]
+	path = vendor/common-lib/lib
+	url = git@github.com:hathitrust/mdp-lib.git
