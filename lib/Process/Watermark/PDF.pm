@@ -132,7 +132,6 @@ sub setup_generated_message {
       $Process::Globals::convert,
       "-fill", '#C0C0C0', # ( $self->debug ? '#B1B1B1' : 'rgba(177,177,177, 0.35)' ), #'#B1B1B1',
       "-background", "white",
-      # "-background", "transparent",
       "-font", $font,
       "-density", "144",
       "-pointsize", "14",
@@ -303,7 +302,7 @@ sub setup_stamp_page {
 
         my ($center_x, $center_y, $wm_margin_y);
         ($center_x, $center_y) = ($x1 / 4, $y1 / 4);
-        $wm_margin_y = 0; # 30;
+        $wm_margin_y = 0;
 
         ( $watermark_digitized, $watermark_original ) = SRV::Utils::get_watermark_filename($mdpItem, { size => 100 });
 

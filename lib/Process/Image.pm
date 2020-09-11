@@ -457,7 +457,7 @@ sub _process_output {
             $self->_add_step(["$Process::Globals::ppmtopgm"]);
         }
         ### $self->_add_step(["$Process::Globals::pamrgbatopng"]);
-        @cmd = ( "$Process::Globals::pnmtopng", "-compression", $ENV{TERM} ? 9 : 1 );
+        @cmd = ( "$Process::Globals::pnmtopng", "-compression", 1 );
         if ( $xres && $yres ) {
             # convert in to m
             $xres = ( $xres * 2.54 ) / 100;

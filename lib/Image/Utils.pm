@@ -36,7 +36,6 @@ sub resize {
     if ( $unit eq 'dpi' ) {
         my $ratio = $resolution / $$meta{dpi};
         $ratio = 1 if ( $ratio > 1 );
-        print STDERR "AHOY WUT $$meta{width} x $$meta{height} :: $resolution / $$meta{dpi} :: $ratio :: $$meta{XResolution} :: $$meta{dpi}\n";
         $$meta{width} = ceil($$meta{width} * $ratio);
         $$meta{height} = ceil($$meta{height} * $ratio);
         $$meta{XResolution} = $$meta{YResolution} = $resolution;
