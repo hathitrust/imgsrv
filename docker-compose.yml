@@ -1,0 +1,36 @@
+version: '3'
+
+services:
+
+  dev:
+    build: .
+    volumes:
+      - .:/htapps/babel/imgsrv
+      # - sdr1:/sdr1
+    environment:
+      - SDRROOT=/htapps/babel
+      - SDRDATAROOT=/sdr1
+      - HT_DEV=
+      - MARIADB_USER=ht_web
+      - REMOTE_ADDR=127.0.0.1
+      - HTTP_HOST=127.0.0.1
+    depends_on:
+      - mariadb
+    links:
+      - mariadb
+
+  solr-sdr-catalog:
+    image: hathitrust/catalog_solr_faker
+    restart: always
+
+  mariadb:
+    image: mariadb
+    environment:
+      # MYSQL_RANDOM_ROOT_PASSWORD: 1
+      MYSQL_ROOT_PASSWORD: TIMTOWTDIBSCINABTE
+    volumes:
+      - ./sql:/docker-entrypoint-initdb.d/
+
+volumes:
+  sdr1:
+  data_db:
