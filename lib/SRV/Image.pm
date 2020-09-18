@@ -291,7 +291,7 @@ sub _validate_params_size {
             }
         }
         $is_valid = 1;
-    } elsif ( $size =~ m{^\d+,$} || $size =~ m{^,\d+$} || $size =~ m{pct:\d+} || $size =~ m{^\!?\d+,\d+$} || $size =~ m{res:\d+}, ) {
+    } elsif ( $size =~ m{^\d+,$} || $size =~ m{^,\d+$} || $size =~ m{pct:\d+} || $size =~ m{^\!?\d+,\d+$} || $size =~ m{res:\d+} || $size =~ m{ppi:\d+$} ) {
         $is_valid = 1;
     }
 

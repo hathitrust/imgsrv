@@ -6,9 +6,17 @@ sub ImageInfo {
     return image_info(@_);
 }
 
+sub process_file {
+    my($info, $fh) = @_;
+    my $result = image_info($fh);
+    foreach my $key ( keys %$result ) {
+        $info->push_info(0, $key => $$result{$key});
+    }
+}
+
 sub image_info {
     my ( $filename ) = @_;
-    my $fh = new IO::File $filename;
+    my $fh = ref($filename) ? $filename : new IO::File $filename;
     my ( $tests, $data ) = BoxValidator->new("JP2", $fh)->validate();
     my $result = {
         width => $$data{'jp2HeaderBox/imageHeaderBox/width'},
@@ -16,11 +24,12 @@ sub image_info {
         layers => $$data{'contiguousCodestreamBox/cod/layers'},
         levels => $$data{'contiguousCodestreamBox/cod/levels'},
     };
-    if ( $$data{'colourSpecificationBox/enumCS'} == 16 ) {
+
+    if ( $$data{'jp2HeaderBox/colourSpecificationBox/enumCS'} == 16 ) {
         $$result{ColorSpace} = qq{sRGB};
-    } elsif ( $$data{'colourSpecificationBox/enumCS'} == 17 ) {
+    } elsif ( $$data{'jp2HeaderBox/colourSpecificationBox/enumCS'} == 17 ) {
         $$result{ColorSpace} = qq{sLUM};
-    } elsif ( $$data{'colourSpecificationBox/enumCS'} == 18 ) {
+    } elsif ( $$data{'jp2HeaderBox/colourSpecificationBox/enumCS'} == 18 ) {
         $$result{ColorSpace} = qq{sYCC};
     }
 
@@ -613,7 +622,7 @@ sub validate_colourSpecificationBox {
     if ( $meth == 1 ) {
         # Enumerated colour space field (long integer)
         my $enumCS = $self->bytesToUInt($self->boxContents(3, $length));
-        $self->addCharacteristic("enumCS",$enumCS)
+        $self->addCharacteristic("enumCS",$enumCS);
 
         # (Note: this will also trap any cases where enumCS is more/less than 4
         # bytes, as $self->bytesToUInt will return bogus negative value, which in turn is
@@ -1368,7 +1377,7 @@ sub _doConv {
             (ord($bits[6]) << 8) + 
             ord($bits[7]);
     } elsif ( length($bytes) == 1 ) {
-        $retval = ord($bits[0]);
+        $retval = unpack("c", $bytes);
     }
     return $retval;
     

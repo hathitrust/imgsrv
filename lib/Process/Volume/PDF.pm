@@ -27,6 +27,7 @@ use PDF::API2;
 require PDF::API2::_patches;
 
 use Image::ExifTool;
+use Image::Utils;
 
 use SRV::Utils;
 use Process::Globals;
@@ -245,57 +246,19 @@ sub generate_pdf {
                 }
             }
         }
-
-
+        # ignore targetPPI/quality for TIFF; source best addresses quality and file size
+        my $ignore_transforms = ( $image_filename =~ m,\.tif, );
 
         my $page = $self->output_document->page();
-        my ($x0, $y0, $x1, $y1) = $page->get_mediabox;
-        my ($w, $h) = ($x1, $y1);
 
         my $info = Image::ExifTool::ImageInfo($image_filename);
         my ( $image_w, $image_h ) = ( $$info{ImageWidth}, $$info{ImageHeight} );
 
-        my $meta = {};
-        if ( $$info{DisplayXResolution} ) {
-            $$meta{XResolution} = $$info{DisplayXResolution};
-            $$meta{YResolution} = $$info{DisplayYResolution};
-            $$meta{ResolutionUnit} = $$info{DisplayXResolutionUnit};
-        } elsif ( $$info{ResolutionUnit} ) {
-            $$meta{XResolution} = $$info{XResolution};
-            $$meta{YResolution} = $$info{YResolution};
-            $$meta{ResolutionUnit} = $$info{ResolutionUnit};
-        } else {
-            $$meta{XResolution} = $$info{XResolution};
-            $$meta{YResolution} = $$info{YResolution};
-        }
-        if ( $targetPPI > 0 ) { delete $$meta{ResolutionUnit}; }
+        my ( $page_width, $page_height ) = Image::Utils::page_dim($info);
 
-        # calculate mediabox dimensions
-        my $unit = $$meta{ResolutionUnit}; # $$info{DisplayXResolutionUnit} || $$info{ResolutionUnit};
-        my ( $page_width, $page_height );
-        if ( $unit eq '0.01 mm' ) {
-            $page_width = ( $image_w / ( $$meta{XResolution} / 0.01 ) / 25.4 ) * 72;
-            $page_height = ( $image_h / ( $$meta{YResolution} / 0.01 ) / 25.4 ) * 72;
-        } elsif ( $unit eq '0.1 mm' ) {
-            $page_width = ( $image_w / ( $$meta{XResolution} / 0.1 ) / 25.4 ) * 72;
-            $page_height = ( $image_h / ( $$meta{YResolution} / 0.1 ) / 25.4 ) * 72;
-        } elsif ( $unit eq 'inches' ) {
-            $page_width = ( $image_w / $$meta{XResolution} ) * 72;
-            $page_height = ( $image_h / $$meta{YResolution} ) * 72;
-        } elsif ( $unit eq 'um' ) {
-            $page_width = ( $image_w / ( $$meta{XResolution} * 10**6 * 0.0254 ) ) * 72;
-            $page_height = ( $image_h / ( $$meta{YResolution} * 10**6 * 0.0254 ) ) * 72;
-        } elsif ( $$info{XResolution} && $$info{XResolution} =~ m,\d{3}, ) {
-            # probably something like 600ppi
-            $page_width = ( $image_w / $$info{XResolution} ) * 72;
-            $page_height = ( $image_h / $$info{YResolution} ) * 72;
-        } else {
-            $page_width = $image_w;
-            $page_height = $image_h;        
-        }
-
-        # increase the page_width by 50? for the margin
+        # increase page width to account for the stamp
         $page_width += $self->stamper->marginalia_width;
+        $page_height += $self->stamper->watermark_height;
         $page->mediabox(0, 0, $page_width, $page_height );
         my @mediabox = $page->get_mediabox;
 
@@ -320,7 +283,7 @@ sub generate_pdf {
         }
 
         ## targetPPI or quality require transforming the source image
-        if ( $targetPPI > 0 || $self->quality ne 'default' ) {
+        if ( ! $ignore_transforms && ( $targetPPI > 0 || $self->quality ne 'default' ) ) {
 
             my $output_format = 'jpg';
             if ( $self->quality eq 'bitonal' ) {
@@ -334,13 +297,7 @@ sub generate_pdf {
             $processor->source( filename => $image_filename );
             $processor->output( filename => $tmp_filename );
             $processor->format($output_format);
-
-            if ( $targetPPI > 0 ) {
-                my $target_w = ( $page_width / 72 ) * $targetPPI;
-                my $target_h = ( $page_height / 72 ) * $targetPPI;
-                $processor->size("!$target_w,$target_h");
-            }
-
+            $processor->size("ppi:$targetPPI") if ( $targetPPI > 0 );
             $processor->quality($self->quality);
 
             $processor->max_dim($self->max_dim) if ( $self->max_dim );
@@ -386,6 +343,7 @@ sub generate_pdf {
                     $processor = new Process::Image;
                     $processor->source( filename => $image_filename );
                     $processor->output( filename => $tmp_filename );
+                    $processor->size("full");
                     $processor->format("image/png");
                     $processor->quality('gray');
                     $processor->max_dim($self->max_dim) if ( $self->max_dim );
@@ -399,10 +357,16 @@ sub generate_pdf {
 
             my $r; my $max; my $ratio;
 
-            my $original_h = $image_h; my $original_w = $image_w;
-            ( $image_w, $image_h, $ratio) = $self->adjust_dimensions($image_w, $image_h, $x2, $y2);
-            my $xpos = ( $center_x - ( $image_w / 2 ) );
-            my $ypos = ( $center_y - ( $image_h / 2 ) );
+            my $original_h; my $original_w;
+            $original_w = $image_w = $image_data->width;
+            $original_h = $image_h = $image_data->height;
+            ( $image_w, $image_h, $ratio) = $self->adjust_dimensions(
+                $image_w, $image_h, 
+                $x2 - $self->stamper->marginalia_width, 
+                $y2 - $self->stamper->watermark_height);
+
+            my $xpos = $self->stamper->marginalia_width;
+            my $ypos = $self->stamper->watermark_height;
 
             if ($searchable) {
                 require Process::Volume::Utils;
