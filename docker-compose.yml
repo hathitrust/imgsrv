@@ -2,11 +2,15 @@ version: '3'
 
 services:
 
+  # assumes imgsrv-sample-data has been checked out next to "imgsrv"
   dev:
     build: .
     volumes:
       - .:/htapps/babel/imgsrv
-      # - sdr1:/sdr1
+      - "../imgsrv-sample-data/sdr1:/sdr1"
+      - "../imgsrv-sample-data/etc:/htapps/babel/etc"
+      - "../imgsrv-sample-data/watermarks:/htapps/babel/watermarks"
+      - "../imgsrv-sample-data:/tmp/imgsrv-sample-data"
     environment:
       - SDRROOT=/htapps/babel
       - SDRDATAROOT=/sdr1
@@ -16,8 +20,10 @@ services:
       - HTTP_HOST=127.0.0.1
     depends_on:
       - mariadb
+      - solr-sdr-catalog
     links:
       - mariadb
+    command: /tmp/imgsrv-sample-data/bin/load_sample.pl
 
   solr-sdr-catalog:
     image: hathitrust/catalog_solr_faker
@@ -32,5 +38,5 @@ services:
       - ./sql:/docker-entrypoint-initdb.d/
 
 volumes:
-  sdr1:
+  # sdr1:
   data_db:
