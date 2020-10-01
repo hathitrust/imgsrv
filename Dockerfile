@@ -27,7 +27,7 @@ RUN ln -s /usr/local/bin/kdu_expand /l/local/bin/kdu_expand
 RUN ln -s /usr/local/bin/kdu_compress /l/local/bin/kdu_compress
 RUN /bin/bash -c 'for cmd in pamflip jpegtopnm tifftopnm bmptopnm pngtopam ppmmake pamcomp pnmscalefixed pamscale pnmrotate pnmpad pamtotiff pnmtotiff pnmtojpeg pamrgbatopng ppmtopgm pnmtopng; do ln -s /usr/bin/$cmd /l/local/bin; done'
 
-RUN cd /htapps/babel; git clone https://github.com/hathitrust/mdp-web
+RUN cd /htapps/babel; git clone https://github.com/hathitrust/mdp-web.git
 
 # RUN bin/setup_dev.sh
 ENV SDRROOT=/htapps/babel
