@@ -23,7 +23,9 @@ services:
       - solr-sdr-catalog
     links:
       - mariadb
-    command: /tmp/imgsrv-sample-data/bin/load_sample.pl
+    ports:
+      - "31028:31028"
+    command: bash -c "/tmp/imgsrv-sample-data/bin/load_sample.pl && /htapps/babel/imgsrv/bin/startup_imgsrv"
 
   solr-sdr-catalog:
     image: hathitrust/catalog_solr_faker
