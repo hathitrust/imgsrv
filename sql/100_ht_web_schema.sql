@@ -1,35 +1,5 @@
-CREATE DATABASE IF NOT EXISTS `ht_repository`;
-
-USE `ht_repository`;
-
-# ************************************************************
-# Sequel Pro SQL dump
-# Version 5446
-#
-# https://www.sequelpro.com/
-# https://github.com/sequelpro/sequelpro
-#
-# Host: 127.0.0.1 (MySQL 5.5.5-10.1.44-MariaDB-0+deb9u1)
-# Database: ht_repository
-# Generation Time: 2020-08-11 21:51:41 +0000
-# ************************************************************
-
-
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8 */;
-SET NAMES utf8mb4;
-/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
-/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
-/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
-
-
-# Dump of table access_stmts
-# ------------------------------------------------------------
-
+USE ht;
 DROP TABLE IF EXISTS `access_stmts`;
-
 CREATE TABLE `access_stmts` (
   `stmt_key` varchar(32) NOT NULL DEFAULT '',
   `stmt_url` text NOT NULL,
@@ -42,7 +12,6 @@ CREATE TABLE `access_stmts` (
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 LOCK TABLES `access_stmts` WRITE;
-/*!40000 ALTER TABLE `access_stmts` DISABLE KEYS */;
 
 INSERT INTO `access_stmts` (`stmt_key`, `stmt_url`, `stmt_head`, `stmt_text`, `stmt_url_aux`, `stmt_icon`, `stmt_icon_aux`)
 VALUES
@@ -80,15 +49,9 @@ VALUES
   ('cc-by-sa-4.0','http://www.hathitrust.org/access_use#cc-by-sa-4.0','Creative Commons Attribution-ShareAlike','This work is protected by copyright law (which includes certain exceptions to the rights of the copyright holder that users may make, such as fair use where applicable under U.S. law), but made available under a Creative Commons Attribution-ShareAlike license. You must attribute this work in the manner specified by the author or licensor (but not in any way that suggests that they endorse you or your use of the work). If you alter, transform, or build upon this work, you may distribute the resulting work only under the same or similar license to this one. Please check the terms of the specific Creative Commons license as indicated at the item level. For details, see the full license deed at http://creativecommons.org/licenses/by-sa/4.0.','https://creativecommons.org/licenses/by-sa/4.0/',NULL,'https://i.creativecommons.org/l/by-sa/4.0/80x15.png'),
   ('pd-pvt','http://www.hathitrust.org/access_use#pd-pvt','Public Domain, Privacy Concerns','We have determined this work to be in the public domain, but access is limited due to privacy concerns. See the HathiTrust Privacy Policy for more information. The link for \"Privacy Policy\" is http://www.hathitrust.org/privacy#pd-pvt.',NULL,NULL,NULL);
 
-/*!40000 ALTER TABLE `access_stmts` ENABLE KEYS */;
 UNLOCK TABLES;
 
-
-# Dump of table access_stmts_map
-# ------------------------------------------------------------
-
 DROP TABLE IF EXISTS `access_stmts_map`;
-
 CREATE TABLE `access_stmts_map` (
   `a_attr` varchar(32) NOT NULL DEFAULT '',
   `a_access_profile` varchar(32) NOT NULL DEFAULT '',
@@ -97,7 +60,6 @@ CREATE TABLE `access_stmts_map` (
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 LOCK TABLES `access_stmts_map` WRITE;
-/*!40000 ALTER TABLE `access_stmts_map` DISABLE KEYS */;
 
 INSERT INTO `access_stmts_map` (`a_attr`, `a_access_profile`, `stmt_key`)
 VALUES
@@ -229,16 +191,12 @@ VALUES
   ('und-world','open','by-permission'),
   ('und-world','page','by-permission'),
   ('und-world','page+lowres','by-permission');
-
-/*!40000 ALTER TABLE `access_stmts_map` ENABLE KEYS */;
 UNLOCK TABLES;
-
 
 # Dump of table ht_institutions
 # ------------------------------------------------------------
 
 DROP TABLE IF EXISTS `ht_institutions`;
-
 CREATE TABLE `ht_institutions` (
   `sdrinst` varchar(32) NOT NULL DEFAULT ' ',
   `inst_id` varchar(64) DEFAULT NULL,
@@ -271,7 +229,6 @@ CREATE TABLE `ht_institutions` (
 # ------------------------------------------------------------
 
 DROP TABLE IF EXISTS `ht_users`;
-
 CREATE TABLE `ht_users` (
   `userid` varchar(256) NOT NULL DEFAULT '',
   `displayname` varchar(128) DEFAULT NULL,
@@ -290,13 +247,41 @@ CREATE TABLE `ht_users` (
   PRIMARY KEY (`userid`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
+LOCK TABLES `ht_users` WRITE;
+INSERT INTO `ht_users` (`userid`, `usertype`, `role`, `expires`, `expire_type`)
+VALUES ('bjensen', 'cataloging', NOW() + INTERVAL 1 YEAR, 'expiresanually' );
+UNLOCK TABLES;
 
 
+DROP TABLE IF EXISTS `ht_sessions`;
+CREATE TABLE `ht_sessions` (
+  `id` varchar(32) NOT NULL DEFAULT '',
+  `a_session` longblob,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+DROP TABLE IF EXISTS `ht_counts`;
+CREATE TABLE `ht_counts` (
+  `userid` varchar(256) NOT NULL DEFAULT '',
+  `accesscount` int(11) NOT NULL DEFAULT '0',
+  `last_access` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `warned` tinyint(1) NOT NULL DEFAULT '0',
+  `certified` tinyint(1) NOT NULL DEFAULT '0',
+  `auth_requested` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`userid`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
-/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
-/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
-/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+DROP TABLE IF EXISTS `pt_exclusivity_ng`;
+CREATE TABLE `pt_exclusivity_ng` (
+  `lock_id` varchar(32) NOT NULL,
+  `item_id` varchar(32) NOT NULL DEFAULT '',
+  `owner` varchar(256) NOT NULL DEFAULT '',
+  `affiliation` varchar(128) NOT NULL DEFAULT '',
+  `expires` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `renewals` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`lock_id`,`owner`,`affiliation`),
+  KEY `lock_check` (`lock_id`,`affiliation`),
+  KEY `excess_check` (`lock_id`,`affiliation`,`expires`),
+  KEY `pt_exclusivity_ng_expires` (`expires`),
+  KEY `pt_exclusivity_ng_item_id` (`item_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=COMPRESSED;

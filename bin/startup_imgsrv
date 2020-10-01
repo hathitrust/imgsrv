@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Usage: startup_imgsrv
+
+exec >> /tmp/imgsrv.out 2>> /tmp/imgsrv.err
+
+NPROC=4
+SDRDATAROOT=$SDRDATAROOT
+SDRROOT=$SDRROOT
+HT_DEV=
+SDRVIEW=full
+BIND=0.0.0.0:31028
+SCRIPT=$SDRROOT/imgsrv/cgi/imgsrv
+
+export SDRROOT SDRDATAROOT SDR_VIEW HT_DEV
+
+/usr/bin/plackup -I $SDRROOT/plack-lib -E production \
+       -R $SCRIPT.psgi,$SCRIPT,$SDRROOT/imgsrv/bin/rdist.timestamp -s FCGI \
+       --manager=FCGI::ProcManager::HT --nproc $NPROC\
+       --listen $BIND $SCRIPT.psgi
