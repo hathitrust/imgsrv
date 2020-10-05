@@ -1,0 +1,1 @@
+../vendor/common-lib/lib/sql/002_ht_rights_current.sql
