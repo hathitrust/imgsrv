@@ -1,8 +1,25 @@
-## Setup
+## Sample Data
 
 Grab some sample data, for exmaple: https://github.com/hathitrust/imgsrv-sample-data
 
 `imgsrv-sample-data` should be in the same directory as `imgsrv`.
+
+## Setup
+
+Check out the submodules:
+
+```
+$ cd imgsrv
+$ git submodule init
+$ git submodule update
+```
+
+And _for now_ copy the application specific SQL into the `mdp-lib` submodule so the `mariadb` service can see it:
+
+```
+$ cd imgsrv
+$ cp sql/*.sql ../vendor/common-lib/lib/sql
+```
 
 ## Running
 

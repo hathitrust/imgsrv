@@ -21,8 +21,6 @@ services:
     depends_on:
       - mariadb
       - solr-sdr-catalog
-    links:
-      - mariadb
     ports:
       - "31028:31028"
     command: bash -c "/tmp/imgsrv-sample-data/bin/load_sample.pl && /htapps/babel/imgsrv/bin/startup_imgsrv"
@@ -37,7 +35,7 @@ services:
       # MYSQL_RANDOM_ROOT_PASSWORD: 1
       MYSQL_ROOT_PASSWORD: TIMTOWTDIBSCINABTE
     volumes:
-      - ./sql:/docker-entrypoint-initdb.d/
+      - ./vendor/common-lib/lib/sql:/docker-entrypoint-initdb.d/
 
 volumes:
   # sdr1:
