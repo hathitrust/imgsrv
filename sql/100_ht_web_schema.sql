@@ -249,7 +249,7 @@ CREATE TABLE `ht_users` (
 
 LOCK TABLES `ht_users` WRITE;
 INSERT INTO `ht_users` (`userid`, `usertype`, `role`, `expires`, `expire_type`)
-VALUES ('bjensen', 'cataloging', NOW() + INTERVAL 1 YEAR, 'expiresanually' );
+VALUES ('bjensen', 'cataloging', 'normal', NOW() + INTERVAL 1 YEAR, 'expiresanually' );
 UNLOCK TABLES;
 
 
