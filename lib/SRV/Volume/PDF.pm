@@ -19,10 +19,8 @@ use Plack::Util::Accessor
         stamp_filename
     );
 
-use Identifier;
 use Utils;
 use Debug::DUtils;
-use DbUtils;
 
 use SRV::Globals;
 use SRV::Utils;
@@ -35,11 +33,6 @@ use File::Basename qw(basename dirname fileparse);
 use File::Path qw(remove_tree);
 use POSIX qw(strftime);
 use Time::HiRes;
-
-use Access::Statements;
-use List::MoreUtils qw(any);
-
-use Image::ExifTool;
 
 use Digest::SHA qw(sha256_hex);
 

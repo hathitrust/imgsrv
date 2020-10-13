@@ -10,14 +10,9 @@ use Plack::Response;
 use Plack::Util;
 
 use Plack::Util::Accessor
-    @SRV::Volume::Base::accessors,
-    qw(
-        cache_dir
-    );
+    @SRV::Volume::Base::accessors;
 
-use Identifier;
 use Utils;
-use Debug::DUtils;
 
 use SRV::Globals;
 use SRV::Utils;
@@ -31,8 +26,6 @@ use File::Path qw(remove_tree);
 use File::Temp qw(tempfile);
 use POSIX qw(strftime);
 use Time::HiRes;
-
-use Access::Statements;
 
 use Digest::SHA qw(sha256_hex);
 
@@ -61,7 +54,7 @@ sub _run {
         mdpItem => $mdpItem,
         output_filename => $self->output_filename,
         progress_filepath => $self->progress_filepath,
-        cache_dir => $self->cache_dir || SRV::Utils::get_cachedir(),
+        cache_dir => SRV::Utils::get_cachedir(),
         display_name => $self->display_name,
         institution => $self->institution,
         access_stmts => $self->access_stmts,

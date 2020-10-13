@@ -28,6 +28,8 @@ use POSIX qw(strftime ceil);
 use SRV::Utils;
 use Process::Globals;
 
+use Image::ExifTool;
+
 use constant LEFT_ALIGNED => 1;
 use constant RIGHT_ALIGNED => 1;
 

@@ -27,8 +27,6 @@ use File::Temp qw(tempfile);
 use POSIX qw(strftime);
 use Time::HiRes;
 
-use Access::Statements;
-
 use Digest::SHA qw(sha256_hex);
 
 use utf8;
@@ -413,8 +411,9 @@ sub _fill_params {
             $self->progress_filepath($progress_filepath);
         }
 
-    } elsif ( ! $self->output_filename ) {
-        print STDERR "AHOY SETTING UP THIS OUTPUT FILENAME\n";
+    } elsif ( ! $self->output_filename && ! $self->can('_generate_coderef') ) {
+        # no output_filename was specified and this format cannot stream to STDOUT
+        
         $cache_dir = SRV::Utils::get_cachedir('download_cache_dir') . $volume_identifier . '/';
         Utils::mkdir_path( $cache_dir, $SRV::Globals::gMakeDirOutputLog );
         my ( $fh, $filename ) = tempfile( 
