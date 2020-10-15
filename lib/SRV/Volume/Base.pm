@@ -167,9 +167,9 @@ sub _background {
     my $cache_filename = $self->output_filename;
 
     my $progress_filepath = $self->progress_filepath;
-    my $progress_filename_url = SRV::Utils::get_download_status_url($self, 'pdf');
+    my $progress_filename_url = SRV::Utils::get_download_status_url($self, $self->_action);
 
-    my $download_url = SRV::Utils::get_download_url($self, "pdf");
+    my $download_url = SRV::Utils::get_download_url($self, $self->_action);
     $self->download_url($download_url);
 
     my $callback = $req->param('callback');
@@ -222,6 +222,11 @@ sub _background {
     # we're only here _because_ we're in the background, with a callback; fork the child and keep going
     my @cmd = ( "../bin/start.sh", $$, $self->_action, $cache_filename );
     push @cmd, "--id", $id;
+    if ( my @params = $self->_download_params ) {
+        foreach my $p ( @params ) {
+            push @cmd, "--" . $$p[0], $$p[1];
+        }
+    }
     if ( $self->is_partial ) {
         if ( $self->pages_ranges ) {
             push @cmd, "--seq", $self->pages_ranges;
@@ -592,6 +597,11 @@ sub _user_volume_identifier {
     }
 
     return $self->user_volume_identifier($user_identifier .= '#' . $volume_identifier);
+}
+
+sub _download_params {
+    my $self = shift;
+    return ();
 }
 
 1;

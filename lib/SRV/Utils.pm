@@ -127,6 +127,12 @@ sub get_download_url
     $download_url .= qq{imgsrv/download/$action};
     $download_url .= qq{?id=$id};
 
+    if ( my @params = $service->_download_params ) {
+        foreach my $p ( @params ) {
+            $download_url .= ";$$p[0]=$$p[1]";
+        }
+    }
+
     if ( $service->is_partial && scalar @{ $service->pages } ) {
         my $seqlist = seq2range($service->pages);
 

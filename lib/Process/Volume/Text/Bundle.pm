@@ -126,6 +126,8 @@ sub process {
         rename($self->output_filename . ".download", $self->output_filename) || die $!;
     }
 
+    $self->updater->finish();
+
     return {
         filename => $self->output_filename,
         mimetype => ( $self->format eq 'zip' ? "application/epub+zip" : "text/plain" )
@@ -235,6 +237,9 @@ sub concatenate_text {
     my $env = shift;
     my $working_dir = $self->working_dir;
 
+    my $i = 0;
+    $self->updater->update($i);
+
     my $C = $$env{'psgix.context'};
     my $mdpItem = $C->get_object('MdpItem');
 
@@ -272,6 +277,9 @@ sub concatenate_text {
             }
 
             print $text_fh $ff, "\n\n" unless ( $seq eq $self->pages->[-1] );
+
+            $i += 1;
+            $self->updater->update($i);
         }
 
     }

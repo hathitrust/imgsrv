@@ -34,6 +34,8 @@ use utf8;
 sub new {
     my $class = shift;
     my $self = $class->SUPER::new(@_);
+
+    $self->format('text') unless ( defined $self->format );
     
     $self;
 }
@@ -89,7 +91,7 @@ sub _type {
 
 sub _action {
     my $self = shift;
-    return q{pdf};
+    return q{text};
 }
 
 sub _ext {
@@ -103,6 +105,11 @@ sub _updater {
     return new SRV::Utils::Progress
         type => ( $self->format eq 'zip' ? 'zip archive' : 'combined text file' ),
         %params;
+}
+
+sub _download_params {
+    my $self = shift;
+    return ( [ 'format', $self->format ] );
 }
 
 1;

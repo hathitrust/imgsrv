@@ -151,6 +151,9 @@ sub process_page_text {
 sub process_all_pages {
     my $self = shift;
 
+    $self->updater->update(0);
+    my $i = 0;
+
     my $extract_pathname = $self->mdpItem->GetDirPathMaybeExtract(['*/*.txt']);
 
     foreach my $seq ( @{ $self->pages } ) {
@@ -158,6 +161,9 @@ sub process_all_pages {
 
         my $target_filename = $self->add_file($seq, 'ocrfile');
         copy("$extract_pathname/$extract_filename", $self->pathname($target_filename));
+
+        $i += 1;
+        $self->updater->update($i);
     }
 
 }
