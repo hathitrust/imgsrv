@@ -8,6 +8,8 @@ RUN git config --global url."https://".insteadOf git://
 RUN wget -O /tmp/netpbm-sf-10.73.32_amd64.deb https://sourceforge.net/projects/netpbm/files/super_stable/10.73.32/netpbm-sf-10.73.32_amd64.deb/download
 RUN dpkg --force-all -i /tmp/netpbm-sf-10.73.32_amd64.deb
 
+RUN ln -s /tmp /ram
+
 RUN mkdir -p /l/local/bin
 RUN ln -s /usr/bin/unzip /l/local/bin/unzip
 RUN ln -s /usr/bin/convert /l/local/bin/convert
