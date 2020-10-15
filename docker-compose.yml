@@ -23,7 +23,7 @@ services:
       - solr-sdr-catalog
     ports:
       - "31028:31028"
-    command: bash -c "/tmp/imgsrv-sample-data/bin/load_sample.pl && /htapps/babel/imgsrv/bin/startup_imgsrv"
+    command: bash -c "/htapps/babel/imgsrv/bin/startup_imgsrv"
 
   solr-sdr-catalog:
     image: hathitrust/catalog_solr_faker
