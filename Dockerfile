@@ -2,9 +2,6 @@ FROM hathitrust/feed_base:buster
 
 RUN apt-get install -y libtest-class-perl libswitch-perl libtest-spec-perl libtest-mockobject-perl
 
-RUN git config --global url."https://github.com/".insteadOf git@github.com:
-RUN git config --global url."https://".insteadOf git://
-
 RUN wget -O /tmp/netpbm-sf-10.73.32_amd64.deb https://sourceforge.net/projects/netpbm/files/super_stable/10.73.32/netpbm-sf-10.73.32_amd64.deb/download
 RUN dpkg --force-all -i /tmp/netpbm-sf-10.73.32_amd64.deb
 
