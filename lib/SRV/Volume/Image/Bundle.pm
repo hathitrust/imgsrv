@@ -58,7 +58,7 @@ sub _run {
 
     my $class = q{Process::Volume::Image::Bundle};
 
-    print STDERR join(" / ", "AHOY BUNDLE", $self->bundle_format, $self->handle, $self->format, $self->target_ppi), "\n";
+    # print STDERR join(" / ", "AHOY BUNDLE", $self->bundle_format, $self->handle, $self->format, $self->target_ppi), "\n";
 
     $class = Plack::Util::load_class($class);
     my $process = $class->new(

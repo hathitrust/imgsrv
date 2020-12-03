@@ -106,8 +106,6 @@ sub build_content {
 
     $self->size(qq{ppi:} . ( $self->target_ppi || 75) );
 
-print STDERR "AHOY build_content :: " . $self->size . "\n";
-
     my $i = 0;
     foreach my $seq ( @{ $self->pages } ) {
 

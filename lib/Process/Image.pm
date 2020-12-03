@@ -226,7 +226,6 @@ sub _setup_sizing {
 
     my $sizing = {};
 
-print STDERR "AHOY SIZE = $size\n";
     if ( $size =~ m,^ppi:\d, ) {
         my ( $target_ppi ) = $size =~ m{^ppi:(\d+)};
         my $meta = Image::Utils::resize($info, $target_ppi);
