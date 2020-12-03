@@ -530,6 +530,8 @@ sub parse_env {
             my $value;
             my $key = $param;
 
+            print STDERR "AHOY -- $param :: @values\n";
+
             if ( scalar @values == 1 ) {
                 $value = $values[0];
             } else {

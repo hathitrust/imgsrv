@@ -1,4 +1,4 @@
-package SRV::Volume::Text::Bundle;
+package SRV::Volume::Image::Bundle;
 
 use strict;
 use warnings;
@@ -10,7 +10,13 @@ use Plack::Response;
 use Plack::Util;
 
 use Plack::Util::Accessor
-    @SRV::Volume::Base::accessors;
+    @SRV::Volume::Base::accessors,
+    qw(
+        rotation
+        target_ppi
+        quality
+        max_dim
+    );
 
 use Utils;
 
@@ -35,7 +41,8 @@ sub new {
     my $class = shift;
     my $self = $class->SUPER::new(@_);
 
-    $self->bundle_format('text') unless ( defined $self->bundle_format );
+    $self->format('image/jpg') unless ( defined $self->format );
+    $self->bundle_format('zip') unless ( defined $self->bundle_format );
     
     $self;
 }
@@ -49,7 +56,9 @@ sub _run {
     my $mdpItem = $C->get_object('MdpItem');
     my $gId = $mdpItem->GetId();
 
-    my $class = q{Process::Volume::Text::Bundle};
+    my $class = q{Process::Volume::Image::Bundle};
+
+    print STDERR join(" / ", "AHOY BUNDLE", $self->bundle_format, $self->handle, $self->format, $self->target_ppi), "\n";
 
     $class = Plack::Util::load_class($class);
     my $process = $class->new(
@@ -67,6 +76,9 @@ sub _run {
         limit => $self->limit,
         watermark => $self->watermark,
         bundle_format => $self->bundle_format,
+        format => $self->format,
+        target_ppi => $self->target_ppi,
+        quality => $self->quality,
         pages => $self->pages,
         is_partial => $self->is_partial,
         updater => $updater,
@@ -76,7 +88,14 @@ sub _run {
 
 sub _possible_params {
     my $self = shift;
-    return $self->_default_params;
+
+    my %params = $self->_default_params;
+    $params{rotation} = '0';
+    $params{target_ppi} = undef;
+    $params{quality} = 'default';
+    $params{bundle_format} = 'zip';
+
+    return %params;
 }
 
 sub _content_type {
@@ -86,30 +105,34 @@ sub _content_type {
 
 sub _type {
     my $self = shift;
-    return ( $self->bundle_format eq 'zip' ? 'ZIP archive' : 'concatenated text file' );
+    return 'ZIP archive';
 }
 
 sub _action {
     my $self = shift;
-    return q{plaintext};
+    return q{image};
 }
 
 sub _ext {
     my $self = shift;
-    return ( $self->bundle_format eq 'zip' ? 'zip' : 'txt' );
+    return 'zip';
 }
 
 sub _updater {
     my $self = shift;
     my %params = @_;
     return new SRV::Utils::Progress
-        type => ( $self->bundle_format eq 'zip' ? 'zip archive' : 'combined text file' ),
+        type => 'zip archive',
         %params;
 }
 
 sub _download_params {
     my $self = shift;
-    return ( [ 'bundle_format', $self->bundle_format ] );
+    return ( 
+        [ 'format', $self->format ],
+        [ 'target_ppi', $self->target_ppi ],
+        [ 'bundle_format', $self->bundle_format ],
+    );
 }
 
 1;

@@ -325,6 +325,7 @@ sub _fill_params {
     }
 
     my $attachment_filename = $mdpItem->GetId();
+    $attachment_filename =~ s,[^\w_-],-,gsm;
 
     # define pages
     my $file = $self->file;
@@ -434,6 +435,11 @@ sub _get_default_seq {
         $seq = $mdpItem->HasTOCFeature();
     }
     return $seq;
+}
+
+sub _download_params {
+    my $self = shift;
+    return ();
 }
 
 1;

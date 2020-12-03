@@ -56,6 +56,8 @@ our @accessors = qw(
     user_volume_identifier
     super
     id
+    tracker
+    bundle_format
 );
 
 sub new {
@@ -268,6 +270,16 @@ sub _stream {
     my $req = Plack::Request->new($env);
     my $res = $req->new_response(200);
     $res->headers($self->_get_response_headers);
+
+    if ( $self->tracker ) {
+        my $value = $req->cookies->{tracker} || '';
+        $res->cookies->{tracker} = {
+            value => $value . $self->tracker,
+            path => '/',
+            expires => time + 24 * 60 * 60,
+        };
+    }
+
     $res->body($fh);
 
     # unlink the progress file IF we're calling from the web
@@ -325,6 +337,7 @@ sub _fill_params {
     }
 
     my $attachment_filename = $mdpItem->GetId();
+    $attachment_filename =~ s,[^\w_-],-,gsm;
     my $slice = "";
 
     # define pages
@@ -439,6 +452,8 @@ sub _default_params {
         progress_filepath => undef,
         attachment => undef,
         download_url => undef,
+        tracker => undef,
+        bundle_format => undef,
     );
 
     unless ( SRV::Utils::under_server() ) {

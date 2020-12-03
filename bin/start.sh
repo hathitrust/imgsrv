@@ -4,6 +4,11 @@ XPPID=$1; shift;
 CMD=$1; shift
 OUTPUT=$1; shift;
 
+if [ "$CMD" = "image" ]
+then
+  CMD="image_bundle"
+fi
+
 echo "STARTING: $HTTP_HOST $$ : $XPPID : $CMD $*" >$OUTPUT.err
 
 DIR=`dirname $0`

@@ -61,7 +61,20 @@ sub _generate_coderef {
 
         my $status = ( Debug::DUtils::under_server() && $self->restricted ) ? 403 : 200;
 
-        my $writer = $responder->([$status, $self->_get_response_headers]);
+        my $headers = $self->_get_response_headers;
+
+        if ( $self->tracker ) {
+            my $req = Plack::Request->new($env);
+            my $value = $req->cookies->{tracker} || '';
+            $value .= $self->tracker;
+            my $expires = strftime("%a, %d-%b-%Y %H:%M:%S GMT", gmtime(time + 24 * 60 * 60));
+            push @$headers, 
+                'Set-Cookie',
+                qq{tracker=$value; path=/; expires=$expires};
+        }
+
+
+        my $writer = $responder->([$status, $headers]);
         my $fh;
 
         if ( ! $self->output_filename || Debug::DUtils::under_server() ) {

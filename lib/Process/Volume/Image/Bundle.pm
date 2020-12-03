@@ -1,4 +1,4 @@
-package Process::Volume::Text::Bundle;
+package Process::Volume::Image::Bundle;
 
 use strict;
 use warnings;
@@ -10,7 +10,10 @@ use Plack::Util::Accessor qw(
     institution 
     proxy 
     handle 
-    bundle_format 
+    format 
+    bundle_format
+    target_ppi
+    quality
     file
     pages 
     total_pages
@@ -52,10 +55,9 @@ use File::Temp qw(tempdir);
 
 use POSIX qw(strftime);
 
-use ISO639;
+use Process::Image;
 
 use Text::Wrap;
-use IPC::Run;
 use File::pushd;
 
 our $COLOPHON_FILENAME = '00000000-hathitrust-colophon.txt';
@@ -87,7 +89,7 @@ sub process {
     my @tmp = make_path($working_dir);
     $self->working_dir($working_dir);
 
-    my $packager_class_name = "Package::Text::" . ( $mdpItem->Get('item_subclass') || "Volume" );
+    my $packager_class_name = "Package::Image::" . ( $mdpItem->Get('item_subclass') || "Volume" );
     my $packager_class = Plack::Util::load_class($packager_class_name);
     $self->packager($packager_class->new(
         mdpItem => $mdpItem,
@@ -101,6 +103,9 @@ sub process {
         working_dir => $working_dir,
         pages => $self->pages,
         is_partial => $self->is_partial,
+        format => $self->format,
+        target_ppi => $self->target_ppi,
+        quality => $self->quality,
         watermark => $self->watermark,
     ));
 
@@ -108,15 +113,13 @@ sub process {
         $self->packager->generate($env);
     };
     if ( my $err = $@ ) {
-        die "COULD NOT GENERATE TEXT: $err";
+        die "COULD NOT GENERATE IMAGE: $err";
     }
 
     $self->insert_colophon_page($env);
 
     if ( $self->bundle_format eq 'zip' ) {
         $self->pack_zip($env);
-    } else {
-        $self->concatenate_text($env);
     }
 
     my $do_rename = 1;
@@ -130,7 +133,7 @@ sub process {
 
     return {
         filename => $self->output_filename,
-        mimetype => ( $self->bundle_format eq 'zip' ? "application/epub+zip" : "text/plain" )
+        mimetype => "application/zip",
     };
 }
 
@@ -177,7 +180,7 @@ Find this book online: $handle
 
 TEXT
 
-    $contents .= wrap("", "", $self->packager->additional_message());
+    # $contents .= wrap("", "", $self->packager->additional_message());
     $contents .= "\n\n";
 
     # watermarks!
@@ -212,8 +215,6 @@ TEXT
     $contents .= wrap("", "", join(' ', @message)) . "\n";
 
     write_file("$working_dir/$COLOPHON_FILENAME", {binmode => ':utf8'}, $contents);
-
-
 }
 
 sub pack_zip {
@@ -230,61 +231,6 @@ sub pack_zip {
     }
 
     return $zip_filename;
-}
-
-sub concatenate_text {
-    my $self = shift;
-    my $env = shift;
-    my $working_dir = $self->working_dir;
-
-    my $i = 0;
-    $self->updater->update($i);
-
-    my $C = $$env{'psgix.context'};
-    my $mdpItem = $C->get_object('MdpItem');
-
-    my $ff = chr(12);
-
-    my $text_filename = $self->output_filename . ".download";
-    open(my $text_fh, ">", $text_filename);
-
-    {
-        my $dir = pushd($working_dir);
-        my $input_fh;
-
-        open($input_fh, '<', $COLOPHON_FILENAME);
-        while ( <$input_fh> ) {
-            print $text_fh $_;
-        }
-
-        print $text_fh $ff, "\n\n";
-
-        foreach my $seq ( @{ $self->pages } ) {
-
-            my $text_filename = $self->packager->get_file($seq, 'ocrfile');
-
-            my $header = "p. (#$seq)";
-            my $pg =  $mdpItem->GetPageNumBySequence( $seq );
-            if ( $pg && $pg ne $seq ) {
-                $header = "p. $pg (#$seq)";
-            }
-
-            print $text_fh "## $header " . ( '#' x ( 60 - length($header) - 3 ) ), "\n\n";
-
-            open($input_fh, '<', $text_filename);
-            while ( <$input_fh> ) {
-                print $text_fh $_;
-            }
-
-            print $text_fh $ff, "\n\n" unless ( $seq eq $self->pages->[-1] );
-
-            $i += 1;
-            $self->updater->update($i);
-        }
-
-    }
-
-    return $text_filename;
 }
 
 1;
