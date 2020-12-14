@@ -20,6 +20,7 @@ use Plack::Util::Accessor qw(
     default_watermark
     missing
     force
+    tracker
 );
 
 use Process::Image;
@@ -189,7 +190,17 @@ sub call {
     $res->header('Cache-Control', "$cache_control, private");
 
     my $attachment_filename = $self->_build_attachment_filename($output);
-    $res->header('Content-disposition', qq{inline; filename=$attachment_filename});
+    my $disposition = $req->param('attachment') eq '1' ? "attachment" : "inline";
+    $res->header('Content-disposition', qq{$disposition; filename=$attachment_filename});
+
+    if ( $self->tracker ) {
+        my $value = $req->cookies->{tracker} || '';
+        $res->cookies->{tracker} = {
+            value => $value . $self->tracker,
+            path => '/',
+            expires => time + 24 * 60 * 60,
+        };
+    }
 
     $res->body($fh);
     $res->finalize;
@@ -207,6 +218,7 @@ sub _fill_params {
         format => undef,
         force => undef,
         id => undef,
+        tracker => undef,
     );
 
     if ( $ENV{PSGI_COMMAND} ) {

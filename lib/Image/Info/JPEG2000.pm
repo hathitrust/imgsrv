@@ -2,6 +2,14 @@ package Image::Info::JPEG2000;
 
 use IO::File;
 
+our %ResolutionUnitMap = (
+    1 => 'None',
+    2 => 'inches',
+    3 => 'cm',
+    4 => 'mm',
+    5 => 'um'
+);
+
 sub ImageInfo {
     return image_info(@_);
 }
@@ -41,6 +49,21 @@ sub image_info {
         $$result{XResolution} = $$data{'jp2HeaderBox/resolutionBox/captureResolutionBox/hRescInPixelsPerInch'};
         $$result{YResolution} = $$data{'jp2HeaderBox/resolutionBox/captureResolutionBox/vRescInPixelsPerInch'};
         $$result{ResolutionUnit} = 'inches';
+    } elsif ( $$data{'uuidBox/xmpdata'} ) {
+        # there was no resolution data so pull it out of the XMP metadata
+        # print STDERR $$data{'uuidBox/xmpdata'}, "\n";
+        my $xmpdata = $$data{'uuidBox/xmpdata'};
+        require Image::TIFF;
+        foreach my $tag ( qw/XResolution YResolution ResolutionUnit/ ) {
+            my ( $tmp ) = ( $xmpdata =~ m,<tiff:$tag>(.*)</tiff:$tag>,m );
+            if ( $tag eq q{ResolutionUnit} ) {
+                $$result{ResolutionUnit} = $ResolutionUnitMap{$tmp};
+            } else {
+                my ( $num, $den ) = split('/', $tmp);
+                $den = 1 unless ( $den );
+                $$result{$tag} = Image::TIFF::Rational->new($num, $den);
+            }
+        }
     }
 
     return $result;
@@ -1222,6 +1245,19 @@ sub validate_xmlBox {
 
 sub validate_uuidBox {
     my ( $self ) = @_;
+    my $noBytes = $$self{boxContentsLength};
+
+    my $bytes = $self->boxContents(0, 16);
+    use UUID;
+    my $box_uuid;
+    UUID::unparse($bytes, $box_uuid);
+
+    if ( $box_uuid eq q{be7acfcb-97a9-42e8-9c71-999491e3afac} ) {
+        my $xmp_data = $self->boxContents(16, $noBytes);
+        $self->addCharacteristic("xmpdata", $xmp_data);
+    } else {
+        $self->addCharacteristic("uuid", $box_uuid);
+    }
 }
 
 sub validate_uuidInfoBox {

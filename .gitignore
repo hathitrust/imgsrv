@@ -12,6 +12,7 @@
 SDR
 /lib/Config/local.conf
 node_modules
+bin/rdist.timestamp
 
 /META.yml
 /META.json

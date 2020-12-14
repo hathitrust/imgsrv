@@ -39,7 +39,7 @@ my @config = (
     "force",
 );
 
-$ENV{PSGI_ACTION} = basename(__FILE__);
+$ENV{PSGI_ACTION} = q{image};
 
 print STDERR "RUNNING $ENV{PSGI_ACTION} : $$\n";
 
