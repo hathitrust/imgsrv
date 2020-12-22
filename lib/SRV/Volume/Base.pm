@@ -557,7 +557,7 @@ sub _log_ga {
             );
 
     my ( $digitization_source, $collection_source ) = SRV::Utils::get_sources($mdpItem);
-    my @dp = ( qq{/cgi/imgsrv-download-pdf/} );
+    my @dp = ( qq{/cgi/imgsrv-download-/} . $self->_action );
     push @dp, $collection_source, "/", $self->id();
     push @dp, '?mode=' . $mode;
     # push @dl, '?id=' . $self->id();
