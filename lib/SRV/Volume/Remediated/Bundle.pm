@@ -192,8 +192,9 @@ sub _authorize {
         my $gId = $mdpItem->GetId();
 
         my $final_access_status = $ar->assert_final_access_status($C, $gId);
+        my $download_access_status = $ar->get_remediated_items_access_status($C, $gId);
 
-        my $restricted = ( $final_access_status ne 'allow' );
+        my $restricted = ! ( ( $final_access_status eq 'allow' ) && ( $download_access_status eq 'allow' ) );
             
         $self->restricted($restricted);
     }
