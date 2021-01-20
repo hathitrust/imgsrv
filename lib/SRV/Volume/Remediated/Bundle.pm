@@ -20,6 +20,8 @@ use Plack::Util::Accessor
 use MdpItem::EMMA;
 use File::Basename;
 
+use Utils;
+
 sub new {
     my $class = shift;
     my $self = $class->SUPER::new(@_);
@@ -64,6 +66,11 @@ sub _stream {
         $res->content_type("text/html");
         $res->body(qq{<html><body>Not Found</body></html>});
         return $res->finalize;
+    } elsif ( $err =~ m,Remediated item not found for item id, ) {
+        $res->status(404);
+        $res->content_type("text/html");
+        $res->body(qq{<html><body>Not Found</body></html>});
+        return $res->finalize;
     }
 
     $res->headers($self->_get_response_headers());
@@ -103,6 +110,9 @@ sub _process_remediated {
 
     my $remediatedMdpItem;
     $remediatedMdpItem = MdpItem::EMMA->GetMdpItem($C, $remediated_item_id, $itemFileSystemLocation);
+
+    silent_ASSERT( $remediatedMdpItem->Get('repositoryRecordId') eq $gId, 
+        qq{Remediated item not found for item id.} );
 
     my @fileIds = $remediatedMdpItem->GetRemediatedFileIds();
 
