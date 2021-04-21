@@ -24,6 +24,7 @@ use File::Basename qw(basename);
 
 use SRV::SearchUtils;
 
+use utf8;
 use Encode qw(encode_utf8);
 
 our $content_type = q{text/html};
@@ -121,6 +122,8 @@ sub run {
 
     if ( scalar keys %words ) {
         my $words = JSON::XS::encode_json([keys %words]);
+        # then decode this so it can be properly slotted into the text
+        utf8::decode($words);
         $$target{contents} =~ s,<div,<div data-words='$words' ,;
     }
     return $target;
