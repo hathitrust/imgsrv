@@ -566,6 +566,15 @@ sub Solr_retrieve_OCR_page {
         $q_str = join(' ', @$parsed_terms_arr_ref);
     }
 
+    # decode so the imgsrv query matches pt/search
+    utf8::decode($q_str);
+
+    # Convert user query from xml escaped string to regular characters
+    # and then url encode it so we can send it to Solr in an http
+    # request
+    Utils::remap_cers_to_chars(\$q_str);
+    $q_str = uri_escape_utf8( $q_str );
+
     my $rs = new Search::Result::Page;
     my $searcher = SLIP_Utils::Solr::create_shard_Searcher_by_alias($C, 1);
     my $safe_id = Identifier::get_safe_Solr_id($id) . "_$seq";
