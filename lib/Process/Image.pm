@@ -451,10 +451,10 @@ sub _process_output {
 
     if ( $mimetype eq 'image/tiff' ) {
         my @args;
-        if ( $self->_is_grayscale($self->source->{metadata}) || $self->quality =~ m,gray|bitonal, ) {
+        if ( $self->_is_grayscale($self->source->{metadata}) || $self->quality =~ m,gray|bitonal, || $self->watermark ) {
             $self->_add_step(["$Process::Globals::ppmtopgm"]);
 
-            if ( $self->quality eq 'bitonal' || $self->_is_bitonal($self->source->{metadata}) ) {
+            if ( ( $self->quality eq 'bitonal' || $self->_is_bitonal($self->source->{metadata}) ) && ! $self->watermark ) {
                 $self->_add_step(["$Process::Globals::pamthreshold"]);
 
                 push @args, '-g4';
