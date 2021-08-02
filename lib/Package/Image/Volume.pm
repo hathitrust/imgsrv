@@ -104,7 +104,13 @@ sub build_content {
 
     $self->files({});
 
-    $self->size(qq{ppi:} . ( $self->target_ppi || 75) );
+    # $self->size(qq{ppi:} . ( $self->target_ppi || 75) );
+    if ( ! defined $self->target_ppi ) { $self->size(qq{ppi:75}); }
+    elsif ( defined $self->target_ppi && $self->target_ppi == 0 ) {
+        $self->size('full');
+    } else {
+        $self->size(q{ppi:} . $self->target_ppi);
+    }
 
     my $i = 0;
     foreach my $seq ( @{ $self->pages } ) {
@@ -137,7 +143,9 @@ sub process_page_image {
     my ( $seq) = @_;
 
     my $extract_filename = $self->mdpItem->GetFilePathMaybeExtract($seq, 'imagefile');
-    my $target_filename = $self->working_dir . "/" . $self->add_file($seq, 'jpg');
+
+    my $target_ext = $self->format eq 'image/tiff' ? 'tif' : 'jpg';
+    my $target_filename = $self->working_dir . "/" . $self->add_file($seq, $target_ext);
 
     my $blank = 0;
     my @features = $self->mdpItem->GetPageFeatures($seq);

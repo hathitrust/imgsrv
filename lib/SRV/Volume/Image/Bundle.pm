@@ -94,6 +94,7 @@ sub _possible_params {
     $params{target_ppi} = undef;
     $params{quality} = 'default';
     $params{bundle_format} = 'zip';
+    $params{format} = 'image/jpeg';
 
     return %params;
 }

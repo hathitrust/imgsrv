@@ -28,6 +28,7 @@ use Process::Image;
 use Data::Dumper;
 
 use IO::File;
+use JSON::XS;
 
 use SRV::Globals;
 
@@ -107,8 +108,16 @@ sub run {
     if ( -f $output_filename && ! $self->force ) {
         # file exists; we're happy
         my ( $width, $height ) = Process::Image::imgsize($output_filename);
+        my $source_metadata = {};
+        if ( -f "$output_filename.json" ) {
+            open(my $fh, "<", "$output_filename.json");
+            $source_metadata = do { local $/; <$fh> };
+            close($fh);
+            $source_metadata = decode_json($source_metadata);
+        }
         return { filename => $output_filename, mimetype => $content_type,
-                 metadata => { width => $width, height => $height } };
+                 metadata => { width => $width, height => $height },
+                 source_metadata => $source_metadata };
     }
 
     $tmpfilename = SRV::Utils::generate_temporary_filename($mdpItem, $output_file_type);
@@ -184,6 +193,16 @@ sub call {
     my $res = $req->new_response(200);
     $res->content_type($$output{mimetype});
     $res->header('X-HathiTrust-ImageSize' => $$output{metadata}{width} . "x" . $$output{metadata}{height});
+
+    if ( exists $$output{source_metadata}{XResolution} ) {
+        my $image_res = $$output{source_metadata}{XResolution};
+        my $image_units = $$output{source_metadata}{ResolutionUnit} // 'inches';
+        $image_units = 'dpi' if ( $image_units eq 'inches' );
+        $res->header('X-Image-Resolution' => "$image_res $image_units");
+    }
+    if ( exists $$output{source_metadata}{width} ) {
+        $res->header('X-Image-Size' => $$output{source_metadata}{width} . "x" . $$output{source_metadata}{height});
+    }
     $res->header('X-HathiTrust-Access' => $$output{restricted} ? 'deny' : 'allow');
 
     $res->header('Content-length', -s $$output{filename});
@@ -303,7 +322,7 @@ sub _validate_params_size {
             }
         }
         $is_valid = 1;
-    } elsif ( $size =~ m{^\d+,$} || $size =~ m{^,\d+$} || $size =~ m{pct:\d+} || $size =~ m{^\!?\d+,\d+$} || $size =~ m{res:\d+} || $size =~ m{ppi:\d+$} ) {
+    } elsif ( $size eq 'full' || $size =~ m{^\d+,$} || $size =~ m{^,\d+$} || $size =~ m{pct:\d+} || $size =~ m{^\!?\d+,\d+$} || $size =~ m{res:\d+} || $size =~ m{ppi:\d+$} ) {
         $is_valid = 1;
     }
 
