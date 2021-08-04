@@ -104,7 +104,6 @@ sub build_content {
 
     $self->files({});
 
-    # $self->size(qq{ppi:} . ( $self->target_ppi || 75) );
     if ( ! defined $self->target_ppi ) { $self->size(qq{ppi:75}); }
     elsif ( defined $self->target_ppi && $self->target_ppi == 0 ) {
         $self->size('full');

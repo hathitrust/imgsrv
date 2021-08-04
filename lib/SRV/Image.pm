@@ -104,16 +104,22 @@ sub run {
         }
     }
     $output_filename = $self->_build_output_filename($env, $restricted, $output_file_type) unless ( $output_filename );
+    my $metadata_filename = SRV::Utils::generate_output_filename($env, [ $self->file ], 'json');
 
     if ( -f $output_filename && ! $self->force ) {
         # file exists; we're happy
         my ( $width, $height ) = Process::Image::imgsize($output_filename);
         my $source_metadata = {};
-        if ( -f "$output_filename.json" ) {
-            open(my $fh, "<", "$output_filename.json");
-            $source_metadata = do { local $/; <$fh> };
-            close($fh);
-            $source_metadata = decode_json($source_metadata);
+        if ( -s $metadata_filename ) {
+            eval {
+                open(my $fh, "<", $metadata_filename);
+                $source_metadata = do { local $/; <$fh> };
+                close($fh);
+                $source_metadata = decode_json($source_metadata);
+            };
+            if ( my $err = $@ ) {
+                print STDERR "could not open source metadata - $err\n";
+            }
         }
         return { filename => $output_filename, mimetype => $content_type,
                  metadata => { width => $width, height => $height },
@@ -160,6 +166,9 @@ sub run {
     $processor->blank($blank) if ( $blank );
 
     my $output = $processor->process();
+
+    $self->_maybe_cache_source_metadata($output, $metadata_filename);
+
     return $output;
 }
 
@@ -223,6 +232,27 @@ sub call {
 
     $res->body($fh);
     $res->finalize;
+}
+
+sub _maybe_cache_source_metadata {
+    my ( $self, $output, $metadata_filename ) = @_;
+        # cache the source metadata
+    if ( exists $$output{source_metadata}{XResolution} ) {
+        my $metadata = { %{ $$output{source_metadata} } };
+        foreach my $key ( keys %$metadata ) {
+            if ( ref($$metadata{$key}) eq 'Image::TIFF::Rational' ) {
+                $$metadata{$key} = $$metadata{$key}->as_float;
+            }
+        }
+        eval {
+            open(my $fh, ">", $metadata_filename);
+            print $fh encode_json($metadata);
+            close($fh);
+        };
+        if ( my $err = $@ ) {
+            print STDERR "could not write to $metadata_filename : $err\n";
+        }
+    }
 }
 
 sub _fill_params {

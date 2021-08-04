@@ -211,18 +211,6 @@ sub _cleanup {
             my $error = $!;
             ## die $!;
             $self->output->{filename} = $self->tmpfilename;
-        } else {
-            # write out the original info
-            my $metadata_filename = $self->output->{filename} . ".json";
-            my $metadata = { %{ $self->source->{metadata} } };
-            foreach my $key ( keys %$metadata ) {
-                if ( ref($$metadata{$key}) eq 'Image::TIFF::Rational' ) {
-                    $$metadata{$key} = $$metadata{$key}->as_float;
-                }
-            }
-            open(my $fh, ">", $metadata_filename);
-            print $fh encode_json($metadata);
-            close($fh);
         }
     }
 }
