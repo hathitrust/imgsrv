@@ -28,6 +28,7 @@ use Process::Image;
 use Data::Dumper;
 
 use IO::File;
+use JSON::XS;
 
 use SRV::Globals;
 
@@ -103,12 +104,26 @@ sub run {
         }
     }
     $output_filename = $self->_build_output_filename($env, $restricted, $output_file_type) unless ( $output_filename );
+    my $metadata_filename = SRV::Utils::generate_output_filename($env, [ $self->file ], 'json');
 
     if ( -f $output_filename && ! $self->force ) {
         # file exists; we're happy
         my ( $width, $height ) = Process::Image::imgsize($output_filename);
+        my $source_metadata = {};
+        if ( -s $metadata_filename ) {
+            eval {
+                open(my $fh, "<", $metadata_filename);
+                $source_metadata = do { local $/; <$fh> };
+                close($fh);
+                $source_metadata = decode_json($source_metadata);
+            };
+            if ( my $err = $@ ) {
+                print STDERR "could not open source metadata - $err\n";
+            }
+        }
         return { filename => $output_filename, mimetype => $content_type,
-                 metadata => { width => $width, height => $height } };
+                 metadata => { width => $width, height => $height },
+                 source_metadata => $source_metadata };
     }
 
     $tmpfilename = SRV::Utils::generate_temporary_filename($mdpItem, $output_file_type);
@@ -151,6 +166,9 @@ sub run {
     $processor->blank($blank) if ( $blank );
 
     my $output = $processor->process();
+
+    $self->_maybe_cache_source_metadata($output, $metadata_filename);
+
     return $output;
 }
 
@@ -184,6 +202,16 @@ sub call {
     my $res = $req->new_response(200);
     $res->content_type($$output{mimetype});
     $res->header('X-HathiTrust-ImageSize' => $$output{metadata}{width} . "x" . $$output{metadata}{height});
+
+    if ( exists $$output{source_metadata}{XResolution} ) {
+        my $image_res = $$output{source_metadata}{XResolution};
+        my $image_units = $$output{source_metadata}{ResolutionUnit} // 'inches';
+        $image_units = 'dpi' if ( $image_units eq 'inches' );
+        $res->header('X-Image-Resolution' => "$image_res $image_units");
+    }
+    if ( exists $$output{source_metadata}{width} ) {
+        $res->header('X-Image-Size' => $$output{source_metadata}{width} . "x" . $$output{source_metadata}{height});
+    }
     $res->header('X-HathiTrust-Access' => $$output{restricted} ? 'deny' : 'allow');
 
     $res->header('Content-length', -s $$output{filename});
@@ -204,6 +232,27 @@ sub call {
 
     $res->body($fh);
     $res->finalize;
+}
+
+sub _maybe_cache_source_metadata {
+    my ( $self, $output, $metadata_filename ) = @_;
+        # cache the source metadata
+    if ( exists $$output{source_metadata}{XResolution} ) {
+        my $metadata = { %{ $$output{source_metadata} } };
+        foreach my $key ( keys %$metadata ) {
+            if ( ref($$metadata{$key}) eq 'Image::TIFF::Rational' ) {
+                $$metadata{$key} = $$metadata{$key}->as_float;
+            }
+        }
+        eval {
+            open(my $fh, ">", $metadata_filename);
+            print $fh encode_json($metadata);
+            close($fh);
+        };
+        if ( my $err = $@ ) {
+            print STDERR "could not write to $metadata_filename : $err\n";
+        }
+    }
 }
 
 sub _fill_params {
@@ -303,7 +352,7 @@ sub _validate_params_size {
             }
         }
         $is_valid = 1;
-    } elsif ( $size =~ m{^\d+,$} || $size =~ m{^,\d+$} || $size =~ m{pct:\d+} || $size =~ m{^\!?\d+,\d+$} || $size =~ m{res:\d+} || $size =~ m{ppi:\d+$} ) {
+    } elsif ( $size eq 'full' || $size =~ m{^\d+,$} || $size =~ m{^,\d+$} || $size =~ m{pct:\d+} || $size =~ m{^\!?\d+,\d+$} || $size =~ m{res:\d+} || $size =~ m{ppi:\d+$} ) {
         $is_valid = 1;
     }
 

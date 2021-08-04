@@ -13,6 +13,8 @@ use Image::Utils;
 
 use Data::Dumper;
 
+use JSON::XS;
+
 use POSIX qw(ceil floor);
 
 use Plack::Util::Accessor qw(
@@ -126,6 +128,7 @@ sub process {
     $self->_run();
 
     # return target hash
+    $self->output->{source_metadata} = $self->source->{metadata};
     $self->output;
 
 }
@@ -436,10 +439,10 @@ sub _process_output {
 
     if ( $mimetype eq 'image/tiff' ) {
         my @args;
-        if ( $self->_is_grayscale($self->source->{metadata}) || $self->quality =~ m,gray|bitonal, ) {
+        if ( $self->_is_grayscale($self->source->{metadata}) || $self->quality =~ m,gray|bitonal, || $self->watermark ) {
             $self->_add_step(["$Process::Globals::ppmtopgm"]);
 
-            if ( $self->quality eq 'bitonal' || $self->_is_bitonal($self->source->{metadata}) ) {
+            if ( ( $self->quality eq 'bitonal' || $self->_is_bitonal($self->source->{metadata}) ) && ! $self->watermark ) {
                 $self->_add_step(["$Process::Globals::pamthreshold"]);
 
                 push @args, '-g4';
@@ -658,6 +661,7 @@ sub _get_file_info {
     $$hash{pathname} = $pathname;
     $$hash{suffix} = $suffix;
     $$hash{mimetype} = $$mime_data{MT_type};
+print STDERR "AHOY FILE INFO :: $$hash{basename} :: $$hash{suffix} :: $$hash{mimetype}\n";
 
     if ( -s $$hash{filename} && $do_get_metadata ) {
         my $info;
@@ -669,6 +673,7 @@ sub _get_file_info {
                 colorspace => $$info{ColorSpace},
                 XResolution => $$info{XResolution},
                 YResolution => $$info{YResolution},
+                ResolutionUnit => $$info{ResolutionUnit},
                 levels => $$info{levels} || _get_levels($info)
             };
         } else {
@@ -678,6 +683,7 @@ sub _get_file_info {
                 colorspace => $$info{ColorSpace} || '',
                 XResolution => $$info{XResolution} ? $$info{XResolution}->as_float : undef,
                 YResolution => $$info{YResolution} ? $$info{YResolution}->as_float : undef,
+                ResolutionUnit => $$info{ResolutionUnit},
                 SamplesPerPixel => $$info{SamplesPerPixel},
                 BitsPerSample => $$info{BitsPerSample},
                 PhotometricInterpretation => $$info{PhotometricInterpretation},
