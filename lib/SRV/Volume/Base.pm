@@ -436,7 +436,7 @@ sub _fill_params {
         Utils::mkdir_path( $cache_dir, $SRV::Globals::gMakeDirOutputLog );
         my ( $fh, $filename ) = tempfile( 
             DIR => $cache_dir, 
-            SUFFIX => $self->_ext,
+            SUFFIX => '.' . $self->_ext,
             CLEANUP => 0 
         );
         $self->output_filename($filename);

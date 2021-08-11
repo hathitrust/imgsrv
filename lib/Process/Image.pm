@@ -439,22 +439,15 @@ sub _process_output {
 
     if ( $mimetype eq 'image/tiff' ) {
         my @args;
-        if ( $self->_is_grayscale($self->source->{metadata}) || $self->quality =~ m,gray|bitonal, || $self->watermark ) {
-            $self->_add_step(["$Process::Globals::ppmtopgm"]);
 
-            if ( ( $self->quality eq 'bitonal' || $self->_is_bitonal($self->source->{metadata}) ) && ! $self->watermark ) {
-                $self->_add_step(["$Process::Globals::pamthreshold"]);
-
-                push @args, '-g4';
-                if ( $self->source->{metadata}->{PhotometricInterpretation} && 
-                     $self->source->{metadata}->{PhotometricInterpretation} eq 'WhiteIsZero' ) {
-                    push @args, '-miniswhite';
-                } else {
-                    push @args, '-minisblack';
-                }
-            }
+        if ( $self->_is_bitonal($self->source->{metadata}) || $self->quality eq 'bitonal' ) {
+            $self->_add_step(["$Process::Globals::pamthreshold"]);
+            push @args, "-g4";
+        } else {
+            push @args, '-packbits';
         }
-        $self->_add_step([$Process::Globals::pnmtotiff, @args])
+
+        $self->_add_step([$Process::Globals::pamtotiff, @args])
     } elsif ( $mimetype eq 'image/png' ) {
         if ( $self->_is_grayscale($self->source->{metadata}) || $self->quality =~ m,gray|bitonal, ) {
             $self->_add_step(["$Process::Globals::ppmtopgm"]);
@@ -543,6 +536,13 @@ sub _process_watermark {
     return unless ( ref($self->mdpItem) );
     return if ( $self->restricted );
 
+    my $suffix = '.png';
+    my $is_bw = 0;
+    if ( $self->output->{mimetype} eq 'image/tiff' && ( $self->_is_bitonal($self->source->{metadata}) || $self->quality eq 'bitonal' ) ) {
+        $suffix = '.bw.png';
+        $is_bw = 1;
+    }
+
     my $info = $self->output->{metadata};
     my $mark_width = floor($$info{width} * 0.5 * 0.8);
 
@@ -555,11 +555,11 @@ sub _process_watermark {
 
     my $y_offset = 0;
     if ( $original_base ) {
-        @original_dim = imgsize("$original_base.png");
+        @original_dim = imgsize("$original_base$suffix");
         $y_offset = floor($original_dim[1] * 0.25);
     }
     if ( $digitized_base) {
-        @digitized_dim = imgsize("$digitized_base.png");
+        @digitized_dim = imgsize("$digitized_base$suffix");
         if ( $digitized_dim[1] > $original_dim[1] ) {
             $y_offset = floor($digitized_dim[1] * 0.25);
             $original_offset_y = ( $digitized_dim[1] - $original_dim[1] );
@@ -569,26 +569,37 @@ sub _process_watermark {
     }
 
     if ( $digitized_base ) {
+        my @args;
+        unless ( $is_bw ) {
+            push @args, "-alpha", "$digitized_base.pgm", "$digitized_base.pnm";
+        } else {
+            push @args, "$digitized_base.bw.pnm";
+        }
         $self->_add_step([
             $Process::Globals::pamcomp,
             "-valign", "bottom",
             "-align", "center",
             "-yoff", -( $digitized_offset_y + $y_offset ),
             "-xoff", -(int($mark_width / 2) + 5),
-            "-alpha", "$digitized_base.pgm",
-            "$digitized_base.pnm",
+            @args,
         ]);
     }
 
     if ( $original_base ) {
+        my @args;
+        unless ( $is_bw ) {
+            push @args, "-alpha", "$original_base.pgm", "$original_base.pnm";
+        } else {
+            push @args, "$original_base.bw.pnm";
+        }
+
         $self->_add_step([
             $Process::Globals::pamcomp,
             "-valign", "bottom",
             "-align", "center",
             "-yoff", -( $original_offset_y + $y_offset ),
             "-xoff", (int($mark_width / 2) + 5),
-            "-alpha", "$original_base.pgm",
-            "$original_base.pnm",
+            @args,
         ]);
     }
 
@@ -661,7 +672,6 @@ sub _get_file_info {
     $$hash{pathname} = $pathname;
     $$hash{suffix} = $suffix;
     $$hash{mimetype} = $$mime_data{MT_type};
-print STDERR "AHOY FILE INFO :: $$hash{basename} :: $$hash{suffix} :: $$hash{mimetype}\n";
 
     if ( -s $$hash{filename} && $do_get_metadata ) {
         my $info;
