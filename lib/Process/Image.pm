@@ -493,6 +493,7 @@ sub _process_sizing {
     my $info = $self->output->{metadata};
     my $scale_cmd;
     return if ( $self->source->{mimetype} eq 'image/jp2' && $$info{exact} );
+    return if ( $$info{r} == 0 && $$info{exact} );
     return if ( $self->blank || $self->restricted );
 
     my $cmd = $Process::Globals::pnmscalefixed;
