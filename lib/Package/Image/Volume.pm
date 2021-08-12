@@ -90,8 +90,6 @@ sub generate {
 
     die "IMAGE BUNDLE CANCELLED" if ( $updater->is_cancelled );
 
-    $updater->finish();
-
     return 1;
 
 }

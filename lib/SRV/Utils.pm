@@ -303,14 +303,14 @@ sub get_watermark_filename
     my @watermark_basenames = ( undef, undef );
 
     if ( $digitization_source ) {
-        if ( -f "$SRV::Globals::gWatermarksDir$digitization_source/digitization/$size.png" ) {
+        if ( -f "$SRV::Globals::gWatermarksDir$digitization_source/digitization/$size.png" || -f "$SRV::Globals::gWatermarksDir$digitization_source/digitization/$size.bw.png" ) {
             $watermark_basenames[0] = "$SRV::Globals::gWatermarksDir$digitization_source/digitization/$size";
         } else {
             print STDERR "NOT FOUND : $SRV::Globals::gWatermarksDir$digitization_source/digitization/$size.png\n";
         }
     }
     if ( $collection_source ) {
-        if ( -f "$SRV::Globals::gWatermarksDir$collection_source/collection/$size.png" ) {
+        if ( -f "$SRV::Globals::gWatermarksDir$collection_source/collection/$size.png" || -f "$SRV::Globals::gWatermarksDir$collection_source/collection/$size.bw.png"  ) {
             $watermark_basenames[1] = "$SRV::Globals::gWatermarksDir$collection_source/collection/$size";
         } else {
             print STDERR "NOT FOUND : $SRV::Globals::gWatermarksDir$collection_source/collection/$size.png\n";
@@ -744,6 +744,8 @@ sub download_url {
 sub update {
     my $self = shift;
     my $page = shift;
+    my $message = shift;
+    $$self{message} = $message if ( $message );
     return if ( $$self{noop} );
     my $message = $self->${ \( $$self{method} ) }($page, $$self{total_pages});
     $self->_write($message, $page);
@@ -804,7 +806,7 @@ sub get_message_js {
     my ( $page, $total_pages ) = @_;
     my $status = 'RUNNING';
     if ( $page < 0 ) { $status = 'DONE'; }
-    my $message = { current_page => $page, total_pages => $total_pages, status => $status };
+    my $message = { current_page => $page, total_pages => $total_pages, status => $status, message => $$self{message} };
     $$message{download_url} = $$self{download_url};
     return encode_json($message);
 }
