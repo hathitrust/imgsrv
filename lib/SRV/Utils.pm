@@ -799,10 +799,14 @@ sub in_progress {
 sub last_progress {
     my $self = shift;
     my $filename = qq{$$self{filepath}/$$self{_current_status_filename}};
+    my $data = {};
     if ( -f $filename ) {
-        my $data = File::Slurp::read_file($filename);
-        return decode_json($data);
+        my $rawdata = File::Slurp::read_file($filename);
+        eval {
+            $data = decode_json($rawdata);
+        };
     }
+    return $data;
 }
 
 sub cancel {
