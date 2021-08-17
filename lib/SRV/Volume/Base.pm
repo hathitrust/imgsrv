@@ -148,14 +148,7 @@ sub run {
 
     if ( $updater->in_progress ) {
         # no callback, but the file is in progress
-        my $req = Plack::Request->new($env);
-        my $res = $req->new_response(200);
-        $res->content_type('text/plain');
-        my $download_uri = $req->base;
-        $download_uri->path($download_uri->path);
-        $download_uri->query_form(%{ $req->query_parameters });
-        $res->body($download_uri->as_string);
-        return $res;
+        return $self->_in_progress_alert($updater, $env);
     }
 
     $self->_run($env, $updater);
@@ -406,9 +399,8 @@ sub _fill_params {
     my $user_volume_identifier = $self->_user_volume_identifier($req, $volume_identifier);
 
     my $marker = $req->param('marker');
-    if ( ! $marker && defined $req->param('callback') ) {
-        # only define a marker IF we're initiating a callback to avoid
-        # creating spurious files
+    if ( ! $marker ) {
+        # create a marker to fold in simultaneous requests
         $marker = $user_volume_identifier;
 
         $marker .= "-$slice" if ( $slice );
@@ -636,6 +628,34 @@ sub get_restricted_message {
     my $self = shift;
     my ( $env ) = @_;
     return qq{<html><body>Restricted</body></html>};
+}
+
+sub _in_progress_alert {
+    my $self = shift;
+    my ( $updater, $env ) = @_;
+
+    my $req = Plack::Request->new($env);
+    my $download_url = $req->base;
+    $download_url->path($download_url->path);
+    $download_url->query_form(%{ $req->query_parameters });
+    $download_url = $download_url->as_string;
+
+    my $message = '<p>Your download is in progress. Please try again later.</p>';
+    
+    my $status = $updater->last_progress;
+    if ( $$status{current_page} ) {
+        $message .= qq{<p>$$status{message}</p>} if ( $$status{message} );
+        if ( $$status{current_page} ) {
+            $message .= qq{<p>Status: $$status{current_page} / $$status{total_pages}</p>};
+        }
+    }
+
+    $message .= qq{<p><a href="$download_url">Download</a></p>};
+
+    my $res = $req->new_response(200);
+    $res->content_type('text/html');
+    $res->body(qq{<html><body>$message</body></html>});
+    return $res;
 }
 
 1;
