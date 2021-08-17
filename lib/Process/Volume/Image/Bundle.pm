@@ -130,6 +130,10 @@ sub process {
         rename($self->output_filename . ".download", $self->output_filename) || die $!;
     }
 
+    while ( ! -f $self->output_filename ) {
+        Time::HiRes::sleep(0.25);
+        print STDERR "AHOY WAITING FOR RENAME\n";
+    }
     $self->updater->finish();
 
     return {
@@ -235,7 +239,7 @@ sub pack_zip {
 
     {
         my $dir = pushd($working_dir);
-        IPC::Run::run([ $ZIP_PROG, "-r", $zip_filename, ".", '-x', '*.DS_Store' ], \undef, $update_status, \$stderr);
+        IPC::Run::run([ $ZIP_PROG, "-0", "-r", $zip_filename, ".", '-x', '*.DS_Store' ], \undef, $update_status, \$stderr);
     }
 
     print STDERR "PACK ZIP DONE\n";
