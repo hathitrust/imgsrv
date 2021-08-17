@@ -130,9 +130,14 @@ sub process {
         rename($self->output_filename . ".download", $self->output_filename) || die $!;
     }
 
+    my $check_file_idx = 0;
     while ( ! -f $self->output_filename ) {
         Time::HiRes::sleep(0.25);
         print STDERR "AHOY WAITING FOR RENAME\n";
+        $check_file_idx += 1;
+        if ( $check_file_idx > 1000 ) {
+            die "COULD NOT FIND RENAMED DOWNLOAD FILE: " . $self->output_filename;
+        }
     }
     $self->updater->finish();
 
