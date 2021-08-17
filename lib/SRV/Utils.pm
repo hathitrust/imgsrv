@@ -785,10 +785,12 @@ sub in_progress {
     closedir($status_dh);
 
     return 0 unless ( scalar @filenames );
+    return 0 if ( $filenames[0] eq 'done.js' );
+    return 0 if ( $filenames[0] eq 'initialize.js' );
 
     my $current_status_filename = $filenames[0];
     my $mod_timestamp = (Time::HiRes::stat(qq{$$self{filepath}/$current_status_filename}))[9];
-    return ( Time::HiRes::time() - $mod_timestamp < 60 );
+    return ( Time::HiRes::time() - $mod_timestamp < ( 10 * 60 ) );
 }
 
 sub cancel {
