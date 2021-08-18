@@ -448,7 +448,7 @@ sub _process_output {
                 push @args, '-color';
                 push @args, '-truecolor';
             }
-            push @args, '-flat';
+            push @args, '-flate';
         }
 
         $self->_add_step([$Process::Globals::pamtotiff, @args])
