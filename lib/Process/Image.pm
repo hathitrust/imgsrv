@@ -444,7 +444,11 @@ sub _process_output {
             $self->_add_step(["$Process::Globals::pamthreshold"]);
             push @args, "-g4";
         } else {
-            push @args, '-packbits';
+            unless ( $self->_is_grayscale($self->source->{metadata}) ) {
+                push @args, '-color';
+                push @args, '-truecolor';
+            }
+            push @args, '-flate';
         }
 
         $self->_add_step([$Process::Globals::pamtotiff, @args])

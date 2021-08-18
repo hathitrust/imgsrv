@@ -89,8 +89,8 @@ sub call {
         my $req = Plack::Request->new($env);
         my $res = $req->new_response(403);
         $res->content_type("text/html");
-        $res->body(qq{<html><body>Restricted</body></html>});
-        return $res;
+        $res->body($self->get_restricted_message($env));
+        return $res->finalize;
     }
 
     if ( $req->param('callback') ) {
@@ -101,7 +101,8 @@ sub call {
         if ( $self->can('_generate_coderef') ) {
             return $self->_generate_coderef($env);
         }
-        $self->run($env);
+        my $retval = $self->run($env);
+        return $retval->finalize if ( ref($retval) eq 'Plack::Response' );
     }
 
     return $self->_stream($env);
@@ -144,6 +145,11 @@ sub run {
         filepath => $self->progress_filepath, total_pages => $self->total_pages,
         download_url => $self->download_url,
         type => $self->_type;
+
+    if ( $updater->in_progress ) {
+        # no callback, but the file is in progress
+        return $self->_in_progress_alert($updater, $env);
+    }
 
     $self->_run($env, $updater);
 }
@@ -393,9 +399,8 @@ sub _fill_params {
     my $user_volume_identifier = $self->_user_volume_identifier($req, $volume_identifier);
 
     my $marker = $req->param('marker');
-    if ( ! $marker && defined $req->param('callback') ) {
-        # only define a marker IF we're initiating a callback to avoid
-        # creating spurious files
+    if ( ! $marker ) {
+        # create a marker to fold in simultaneous requests
         $marker = $user_volume_identifier;
 
         $marker .= "-$slice" if ( $slice );
@@ -424,7 +429,7 @@ sub _fill_params {
             # my $download_progress_cache_base = SRV::Utils::get_download_progress_base();
             # my $progress_filename = $download_progress_cache_base . Identifier::id_to_mdp_path($id) . $slice . "__" . $marker . ".html";
             my $progress_filepath = $cache_dir . $marker  . "__progress";
-            Utils::mkdir_path( ($progress_filepath), $SRV::Globals::gMakeDirOutputLog );
+            Utils::mkdir_path( $progress_filepath, $SRV::Globals::gMakeDirOutputLog );
 
             $self->progress_filepath($progress_filepath);
         }
@@ -617,6 +622,40 @@ sub _user_volume_identifier {
 sub _download_params {
     my $self = shift;
     return ();
+}
+
+sub get_restricted_message {
+    my $self = shift;
+    my ( $env ) = @_;
+    return qq{<html><body>Restricted</body></html>};
+}
+
+sub _in_progress_alert {
+    my $self = shift;
+    my ( $updater, $env ) = @_;
+
+    my $req = Plack::Request->new($env);
+    my $download_url = $req->base;
+    $download_url->path($download_url->path);
+    $download_url->query_form(%{ $req->query_parameters });
+    $download_url = $download_url->as_string;
+
+    my $message = '<p>Your download is in progress. Please try again later.</p>';
+    
+    my $status = $updater->last_progress;
+    if ( $$status{current_page} ) {
+        $message .= qq{<p>$$status{message}</p>} if ( $$status{message} );
+        if ( $$status{current_page} ) {
+            $message .= qq{<p>Status: $$status{current_page} / $$status{total_pages}</p>};
+        }
+    }
+
+    $message .= qq{<p><a href="$download_url">Download</a></p>};
+
+    my $res = $req->new_response(200);
+    $res->content_type('text/html');
+    $res->body(qq{<html><body>$message</body></html>});
+    return $res;
 }
 
 1;

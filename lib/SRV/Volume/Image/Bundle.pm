@@ -86,6 +86,23 @@ sub _run {
     $process->process($env);
 }
 
+sub _authorize {
+    my $self = shift;
+    my $env = shift;
+
+    $self->SUPER::_authorize($env);
+    unless ( $self->restricted ) {
+        # technically the user has access but we need to 
+        # limit resources for bundling to users in a current session
+        my $C = $$env{'psgix.context'};
+        my $ses = $C->get_object('Session');
+        if ( $$ses{is_new} ) { $self->restricted(1); }
+        elsif ( $self->format eq 'image/tiff' && $self->total_pages > 10 ) {
+            $self->restricted(1);
+        }
+    }
+}
+
 sub _possible_params {
     my $self = shift;
 
@@ -135,5 +152,15 @@ sub _download_params {
         [ 'bundle_format', $self->bundle_format ],
     );
 }
+
+sub get_restricted_message {
+    my $self = shift;
+    my ( $env ) = @_;
+    if ( $self->format eq 'image/tiff' && $self->total_pages > 10 ) {
+        return qq{<html><body>Packaging of TIFF images is currently limited to 10 page scans.</body></html>};
+    }
+    return qq{<html><body>Restricted</body></html>};
+}
+
 
 1;
