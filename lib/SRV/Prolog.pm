@@ -97,6 +97,7 @@ sub setup_context {
     my ( $self, $env ) = @_;
 
     my $C = new Context;
+    my $req = Plack::Request->new($env);
 
     my $app = new App($C, $self->app_name);
     $C->set_object('App', $app);
@@ -115,8 +116,10 @@ sub setup_context {
 
     ## CANNOT TURN OFF SESSIONS FOR COMMAND LINE
     ## scripts need the user's identity
+    my $previous_sid = $cgi->cookie($config->get('cookie_name'));
     my $ses = Session::start_session($C, 0);
     $C->set_object('Session', $ses);
+    $$ses{is_new} = ! ( defined $previous_sid && $previous_sid eq $ses->get_session_id ); 
 
     # copy the debug environment to the plack environment
     $$env{DEBUG} = $ENV{DEBUG};

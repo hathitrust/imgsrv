@@ -709,7 +709,7 @@ package SRV::Utils::Progress;
 use File::Slurp;
 use File::Basename qw(dirname basename);
 use File::Path qw(remove_tree);
-use JSON::XS qw(encode_json);
+use JSON::XS qw(encode_json decode_json);
 
 sub new {
     my $class = shift;
@@ -785,10 +785,28 @@ sub in_progress {
     closedir($status_dh);
 
     return 0 unless ( scalar @filenames );
+    return 0 if ( $filenames[0] eq 'done.js' );
+    return 0 if ( $filenames[0] eq 'initialize.js' );
 
     my $current_status_filename = $filenames[0];
     my $mod_timestamp = (Time::HiRes::stat(qq{$$self{filepath}/$current_status_filename}))[9];
-    return ( Time::HiRes::time() - $mod_timestamp < 60 );
+
+    $$self{_current_status_filename} = $current_status_filename;
+
+    return ( Time::HiRes::time() - $mod_timestamp < ( 10 * 60 ) );
+}
+
+sub last_progress {
+    my $self = shift;
+    my $filename = qq{$$self{filepath}/$$self{_current_status_filename}};
+    my $data = {};
+    if ( -f $filename ) {
+        my $rawdata = File::Slurp::read_file($filename);
+        eval {
+            $data = decode_json($rawdata);
+        };
+    }
+    return $data;
 }
 
 sub cancel {
