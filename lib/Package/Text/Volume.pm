@@ -89,8 +89,6 @@ sub generate {
 
     die "TEXT BUNDLE CANCELLED" if ( $updater->is_cancelled );
 
-    $updater->finish();
-
     return 1;
 
 }

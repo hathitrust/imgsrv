@@ -234,6 +234,11 @@ sub pack_zip {
     my $zip_filename = $self->output_filename . ".download";
     my $ZIP_PROG = "/usr/bin/zip";
 
+    if ( -f $zip_filename ) {
+        # previous attempt
+        unlink($zip_filename);
+    }
+
     my $idx = 0;
     my $update_status = sub {
         my ( $buffer ) = @_;

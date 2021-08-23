@@ -56,8 +56,8 @@ my $app = sub {
 
     my $sort = sub {
         my ( $a, $b ) = @_;
-        my $ts_a = (stat "$status_path/$a" )[10];
-        my $ts_b = (stat "$status_path/$b" )[10];
+        my $ts_a = (stat "$status_path/$a" )[9];
+        my $ts_b = (stat "$status_path/$b" )[9];
         return ( $ts_a <=> $ts_b );
     };
 

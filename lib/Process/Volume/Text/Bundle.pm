@@ -114,8 +114,10 @@ sub process {
     $self->insert_colophon_page($env);
 
     if ( $self->bundle_format eq 'zip' ) {
+        $self->updater->update(0, "Packing texts...");
         $self->pack_zip($env);
     } else {
+        $self->updater->update(0, "Concatenating texts...");
         $self->concatenate_text($env);
     }
 
@@ -223,10 +225,22 @@ sub pack_zip {
     my $zip_filename = $self->output_filename . ".download";
     my $ZIP_PROG = "/usr/bin/zip";
 
+    if ( -f $zip_filename ) {
+        # previous attempt
+        unlink($zip_filename);
+    }
+
+    my $idx = 0;
+    my $update_status = sub {
+        my ( $buffer ) = @_;
+        $idx += scalar grep(/adding:/, split(/\n/, $buffer));
+        $self->updater->update($idx);
+    };
+    my $stderr;
+
     {
         my $dir = pushd($working_dir);
-
-        IPC::Run::run([ $ZIP_PROG, "-qr", $zip_filename, ".", '-x', '*.DS_Store' ]);
+        IPC::Run::run([ $ZIP_PROG, "-r", $zip_filename, ".", '-x', '*.DS_Store' ], \undef, $update_status, \$stderr);
     }
 
     return $zip_filename;

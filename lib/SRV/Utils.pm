@@ -772,12 +772,13 @@ sub in_progress {
     return 0 if ( $$self{noop} );
     return 0 unless ( -d $$self{filepath} );
 
-    opendir(my $status_dh, $$self{filepath}) || die "$status_path: $!";
+    my $status_path = $$self{filepath};
+    opendir(my $status_dh, $status_path) || die "$status_path: $!";
 
     my $sort = sub {
         my ( $a, $b ) = @_;
-        my $ts_a = (Time::HiRes::stat "$status_path/$a" )[10];
-        my $ts_b = (Time::HiRes::stat "$status_path/$b" )[10];
+        my $ts_a = (Time::HiRes::stat "$status_path/$a" )[9];
+        my $ts_b = (Time::HiRes::stat "$status_path/$b" )[9];
         return ( $ts_a <=> $ts_b );
     };
 
