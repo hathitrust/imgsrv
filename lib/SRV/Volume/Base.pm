@@ -103,6 +103,7 @@ sub call {
         }
         my $retval = $self->run($env);
         return $retval->finalize if ( ref($retval) eq 'Plack::Response' );
+        return if ( $ENV{PSGI_COMMAND} );
     }
 
     return $self->_stream($env);
