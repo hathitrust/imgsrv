@@ -178,7 +178,8 @@ sub call {
 
     my $output = $self->run($env);
 
-    my $cache_control = q{max-age=360};
+    my $max_age = 86400;    # 1 day = 60 * 60 * 24
+    my $cache_control = qq{max-age=$max_age};
 
     unless ( $$output{data} || $$output{filename} ) {
         my $res = $req->new_response(404);

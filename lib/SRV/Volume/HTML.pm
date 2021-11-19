@@ -138,11 +138,17 @@ sub call {
 
     my $target = $self->run($env);
 
+    my $max_age = 86400;    # 1 day = 60 * 60 * 24
+    my $cache_control = qq{max-age=$max_age};
+
     my $res = $req->new_response(200);
     $res->content_type($$target{mimetype} . ";charset=utf-8");
 
     my $contents = encode_utf8($$target{contents});
-    # utf8::downgrade($contents);
+
+    $res->header( 'Cache-Control', "$cache_control, private" );
+    $res->header( 'Content-length', length($contents) );
+
     $res->body($contents);
     $res->finalize;
 }
