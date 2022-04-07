@@ -87,7 +87,6 @@
     </xsl:template>
 
     <xsl:template match="alto:TextBlock|TextBlock">
-        <xsl:message>AHOY TEXT BLOCK</xsl:message>
         <xsl:variable name="lines-data">
             <block>
                 <xsl:for-each select="alto:TextLine|TextLine">
