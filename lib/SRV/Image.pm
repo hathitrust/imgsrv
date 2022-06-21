@@ -218,6 +218,11 @@ sub call {
     $res->header('Content-length', -s $$output{filename});
     $res->header('Cache-Control', "$cache_control, private");
 
+    unless ( $$env{REMOTE_USER} ) {
+        # add CORS headers to anonymous requests
+        $res->header('Access-Control-Allow-Origin', '*');
+    }
+
     my $attachment_filename = $self->_build_attachment_filename($output);
     my $disposition = $req->param('attachment') eq '1' ? "attachment" : "inline";
     $res->header('Content-disposition', qq{$disposition; filename=$attachment_filename});
