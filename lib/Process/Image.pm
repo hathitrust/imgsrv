@@ -300,18 +300,6 @@ sub _setup_sizing {
         $$sizing{width} = floor($$info{width} * $ratio);
     }
 
-    if ( $self->max_dim && $$sizing{$max_dim} > $self->max_dim ) {
-        my $r = $self->max_dim / $$sizing{$max_dim};
-        $$sizing{$max_dim} = $self->max_dim;
-        $$sizing{$min_dim} = floor($$sizing{$min_dim} * $r);
-    }
-
-    if ( $$sizing{$min_dim} < $MIN_IMAGE_SIZE ) {
-        my $r = $MIN_IMAGE_SIZE / $$sizing{$min_dim};
-        $$sizing{$min_dim} = $MIN_IMAGE_SIZE;
-        $$sizing{$max_dim} = floor($$sizing{$max_dim} * $r);
-    }
-
     unless ( exists $$sizing{r} ) {
         $r = 0;
         my $dim = $$info{$size_dim};
@@ -329,7 +317,21 @@ sub _setup_sizing {
         $$sizing{r} = $r;
         $$sizing{do_best_fit} = $do_best_fit;
     }
-    
+
+    if ( $self->max_dim && $$sizing{$max_dim} > $self->max_dim ) {
+        my $r = $self->max_dim / $$sizing{$max_dim};
+        $$sizing{$max_dim} = $self->max_dim;
+        $$sizing{$min_dim} = floor($$sizing{$min_dim} * $r);
+        $$sizing{exact} = 0;
+    }
+
+    if ( $$sizing{$min_dim} < $MIN_IMAGE_SIZE ) {
+        my $r = $MIN_IMAGE_SIZE / $$sizing{$min_dim};
+        $$sizing{$min_dim} = $MIN_IMAGE_SIZE;
+        $$sizing{$max_dim} = floor($$sizing{$max_dim} * $r);
+    }
+
+
     $$sizing{size} = $pt_size if ( $pt_size );
     $$sizing{XResolution} = $$sizing{YResolution} = $self->target_ppi if ( $self->target_ppi );
     $self->output->{metadata} = $sizing;

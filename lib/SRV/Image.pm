@@ -267,7 +267,7 @@ sub _fill_params {
     my %params = (
         file => undef,
         region => 'full',
-        size => 'full',
+        size => undef,
         rotation => '0',
         quality => 'default',
         format => undef,
