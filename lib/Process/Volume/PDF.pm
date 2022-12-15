@@ -397,7 +397,7 @@ sub generate_pdf {
                     if ( $$data{uses_coordinates} ) {
                         $self->insert_text_as_coordinates($page, $data, $original_w, $original_h, $xpos, $ypos, $ratio );
                     } else {
-                        $self->insert_text_as_lines($page, $data, $y1);
+                        $self->insert_text_as_lines($page, $data, $y2);
                     }
                 };
 
