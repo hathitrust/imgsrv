@@ -5,7 +5,7 @@ services:
   # assumes imgsrv-sample-data has been checked out next to "imgsrv"
   imgsrv:
     build: .
-    image: hathitrust-imgsrv-apache
+    image: hathitrust-imgsrv
     volumes:
       - .:/htapps/babel/imgsrv
       - "../imgsrv-sample-data/sdr1:/sdr1"
@@ -39,14 +39,15 @@ services:
     ports:
       - 3306:3006
 
-  x-apache-cgi:
+  apache-cgi:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.apache
     image: hathitrust-imsgsrv-apache
-    build: .
     ports:
       - "8888:80"
     volumes:
       - .:/htapps/babel/imgsrv
-      # - ./docker/sites-enabled/000-default.conf:/etc/apache2/sites-enabled/000-default.conf
       - ./docker/sites-available:/etc/apache2/sites-available
       - "../imgsrv-sample-data/sdr1:/sdr1"
       - "../imgsrv-sample-data/etc:/htapps/babel/etc"
@@ -62,28 +63,6 @@ services:
       - HT_DEV=roger
       - MARIADB_USER=ht_web
     command: bash -c "/htapps/babel/imgsrv/docker/bin/apache.sh"
-
-  # nginx:
-  #   image: hathitrust-imgsrv
-  #   ports:
-  #     - "8888:8080"
-  #   volumes:
-  #     - ./docker/nginx-default.conf:/etc/nginx/conf.d/default.conf
-  #     - .:/htapps/babel/imgsrv
-  #     - "../imgsrv-sample-data/sdr1:/sdr1"
-  #     - "../imgsrv-sample-data/etc:/htapps/babel/etc"
-  #     - "../imgsrv-sample-data/watermarks:/htapps/babel/watermarks"
-  #     - "../imgsrv-sample-data:/tmp/imgsrv-sample-data"
-  #   depends_on:
-  #     - imgsrv
-  #     - mysql-sdr
-  #     - solr-sdr-catalog
-  #   environment:
-  #     - SDRROOT=/htapps/babel
-  #     - SDRDATAROOT=/sdr1
-  #     - HT_DEV=roger
-  #     - MARIADB_USER=ht_web
-  #   command: bash -c "/htapps/babel/imgsrv/docker/nginx-entrypoint.sh"
 
 volumes:
   # sdr1:

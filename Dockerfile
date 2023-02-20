@@ -154,25 +154,6 @@ RUN apt-get update && apt-get install -y \
   zip \
   zlib1g-dev
 
-RUN apt-get -y install apache2 libapache2-mod-fcgid
-RUN rm /etc/apache2/sites-enabled/*
-ADD ./docker/conf-available /etc/apache2/conf-available
-# ADD ./docker/sites-available /etc/apache2/sites-available
-COPY bin /opt/docker
-RUN chmod +x /opt/docker/*.sh
-
-RUN /usr/sbin/a2dismod 'mpm_*'
-RUN a2enmod headers
-RUN a2enmod env
-RUN a2enmod mpm_prefork
-RUN a2enmod rewrite
-RUN a2enmod proxy
-RUN a2enmod proxy_fcgi
-RUN a2enmod proxy_http
-RUN a2enmod cgi
-RUN a2enconf servername
-RUN a2ensite 000-default
-
 RUN curl https://hathitrust.github.io/debian/hathitrust-archive-keyring.gpg -o /usr/share/keyrings/hathitrust-archive-keyring.gpg
 RUN echo "deb [signed-by=/usr/share/keyrings/hathitrust-archive-keyring.gpg] https://hathitrust.github.io/debian/ bullseye main" > /etc/apt/sources.list.d/hathitrust.list
 
