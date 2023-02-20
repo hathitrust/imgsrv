@@ -59,6 +59,11 @@ sub new {
 sub call {
     my($self, $env) = @_;
 
+    foreach my $key ( sort keys %$env ) {
+        next if ( ref($$env{$key}) );
+        print STDERR "$key :: $$env{$key}\n";
+    }
+
     # skip the setup if we already have a context
     $self->setup_context($env) unless ( Scalar::Util::blessed($$env{'psgix.context'}) );
     if ( defined $$env{'psgix.auth.redirect_url'} ) {

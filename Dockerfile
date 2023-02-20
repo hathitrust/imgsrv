@@ -10,9 +10,9 @@ RUN apt-get update && apt-get install -y \
   build-essential \
   cpanminus \
   curl \
-  fcgiwrap \
   file \
   git \
+  imagemagick \
   libalgorithm-diff-xs-perl \
   libany-moose-perl \
   libapache-session-perl \
@@ -145,7 +145,6 @@ RUN apt-get update && apt-get install -y \
   libyaml-libyaml-perl \
   libyaml-perl \
   netcat \
-  nginx \
   perl \
   procps \
   sqlite3 \
@@ -155,6 +154,25 @@ RUN apt-get update && apt-get install -y \
   zip \
   zlib1g-dev
 
+RUN apt-get -y install apache2 libapache2-mod-fcgid
+RUN rm /etc/apache2/sites-enabled/*
+ADD ./docker/conf-available /etc/apache2/conf-available
+# ADD ./docker/sites-available /etc/apache2/sites-available
+COPY bin /opt/docker
+RUN chmod +x /opt/docker/*.sh
+
+RUN /usr/sbin/a2dismod 'mpm_*'
+RUN a2enmod headers
+RUN a2enmod env
+RUN a2enmod mpm_prefork
+RUN a2enmod rewrite
+RUN a2enmod proxy
+RUN a2enmod proxy_fcgi
+RUN a2enmod proxy_http
+RUN a2enmod cgi
+RUN a2enconf servername
+RUN a2ensite 000-default
+
 RUN curl https://hathitrust.github.io/debian/hathitrust-archive-keyring.gpg -o /usr/share/keyrings/hathitrust-archive-keyring.gpg
 RUN echo "deb [signed-by=/usr/share/keyrings/hathitrust-archive-keyring.gpg] https://hathitrust.github.io/debian/ bullseye main" > /etc/apt/sources.list.d/hathitrust.list
 
@@ -163,7 +181,8 @@ RUN apt-get update && apt-get install -y grokj2k-tools
 RUN cpan \
   File::Pairtree \
   URI::Escape \
-  CGI::PSGI
+  CGI::PSGI \
+  IP::Geolocation::MMDB
 
 
 RUN curl -L -o /tmp/netpbm-sf-10.73.32_amd64.deb https://sourceforge.net/projects/netpbm/files/super_stable/10.73.32/netpbm-sf-10.73.32_amd64.deb/download
@@ -180,6 +199,13 @@ RUN ln -s /usr/bin/plackup /l/local/bin/plackup
 RUN /bin/bash -c 'for cmd in pamflip jpegtopnm tifftopnm bmptopnm pngtopam ppmmake pamcomp pnmscalefixed pamscale pnmrotate pnmpad pamtotiff pnmtotiff pnmtojpeg pamrgbatopng ppmtopgm pnmtopng; do ln -s /usr/bin/$cmd /l/local/bin; done'
 
 WORKDIR /htapps/babel/imgsrv
+
+RUN mkdir /htapps/babel/cache
+RUN chmod 4777 /htapps/babel/cache
+
+RUN mkdir /htapps/babel/logs
+RUN chmod 4777 /htapps/babel/logs
+
 RUN ln -s /htapps/babel /htapps/test.babel
 RUN cd /htapps/babel; git clone https://github.com/hathitrust/mdp-web.git
 
