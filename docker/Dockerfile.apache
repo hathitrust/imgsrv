@@ -17,7 +17,7 @@ RUN a2enmod proxy_fcgi
 RUN a2enmod proxy_http
 RUN a2enmod cgi
 RUN a2enconf servername
-RUN a2ensite 000-default
+# RUN a2ensite 000-default
 
 STOPSIGNAL SIGWINCH
 

@@ -20,7 +20,7 @@ services:
       - REMOTE_ADDR=127.0.0.1
       - HTTP_HOST=127.0.0.1
     depends_on:
-      - mysql-sdr
+      - mariadb
       - solr-sdr-catalog
     ports:
       - "31028:31028"
@@ -31,11 +31,9 @@ services:
     ports:
       - "9033:9033"
 
-  mysql-sdr:
+  mariadb:
     image: ghcr.io/hathitrust/db-image:latest
     restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: 'babel'
     ports:
       - 3306:3006
 
@@ -55,13 +53,12 @@ services:
       - "../imgsrv-sample-data:/tmp/imgsrv-sample-data"
     depends_on:
       - imgsrv
-      - mysql-sdr
+      - mariadb
       - solr-sdr-catalog
     environment:
       - SDRROOT=/htapps/babel
       - SDRDATAROOT=/sdr1
-      - HT_DEV=roger
-      - MARIADB_USER=ht_web
+      - HT_DEV=docker
     command: bash -c "/htapps/babel/imgsrv/docker/bin/apache.sh"
 
 volumes:

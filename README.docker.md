@@ -22,8 +22,8 @@ The `imgsrv` service will start up the "image" service using `startup_imgsrv` as
 
 * `http://localhost:8888/cgi/imgsrv/cover?id=test.pd_open`
 * `http://localhost:8888/cgi/imgsrv/image?id=test.pd_open&seq=1`
-* `http://localhost:888/cgi/imgsrv/html?id=test.pd_open&seq=1`
-* `http://localhost:888/cgi/imgsrv/download/pdf?id=test.pd_open&seq=1&attachment=0`
+* `http://localhost:8888/cgi/imgsrv/html?id=test.pd_open&seq=1`
+* `http://localhost:8888/cgi/imgsrv/download/pdf?id=test.pd_open&seq=1&attachment=0`
 
 
 Use a webserver for FastCGI like https://github.com/beberlei/fastcgi-serve to access the FastCGI app:
