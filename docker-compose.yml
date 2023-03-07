@@ -15,7 +15,7 @@ services:
     environment:
       - SDRROOT=/htapps/babel
       - SDRDATAROOT=/sdr1
-      - HT_DEV=roger
+      - HT_DEV=docker
       - MARIADB_USER=ht_web
       - REMOTE_ADDR=127.0.0.1
       - HTTP_HOST=127.0.0.1
