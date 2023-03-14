@@ -3,7 +3,7 @@ FROM hathitrust-imgsrv
 RUN apt-get -y install apache2 libapache2-mod-fcgid
 RUN rm /etc/apache2/sites-available/*
 ADD ./docker/conf-available /etc/apache2/conf-available
-# ADD ./docker/sites-available /etc/apache2/sites-available
+ADD ./docker/sites-available /etc/apache2/sites-available
 COPY bin /opt/docker
 RUN chmod +x /opt/docker/*.sh
 

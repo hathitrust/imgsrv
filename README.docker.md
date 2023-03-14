@@ -35,4 +35,3 @@ Then:
 * `http://localhost:7777/cover?id=test.pd_open`
 * `http://localhost:7777/image?id=test.pd_open&seq=1`
 * `http://localhost:7777/html?id=test.pd_open&seq=1`
-
