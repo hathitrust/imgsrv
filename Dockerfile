@@ -2,7 +2,8 @@
 
 FROM debian:bookworm
 
-RUN sed -i 's/main.*/main contrib non-free/' /etc/apt/sources.list
+# # does not work bookworm - evaluate if it's needed
+# RUN sed -i 's/main.*/main contrib non-free/' /etc/apt/sources.list
 
 RUN apt-get update && apt-get install -y \
   autoconf \
@@ -43,6 +44,7 @@ RUN apt-get update && apt-get install -y \
   procps \
   starman \
   unzip \
+  uuid-dev \
   zip \
   zlib1g-dev
 
@@ -50,7 +52,8 @@ RUN cpanm --notest \
   File::Pairtree \
   URI::Escape \
   CGI::PSGI \
-  IP::Geolocation::MMDB
+  IP::Geolocation::MMDB \
+  UUID
 
 RUN ln -s /tmp /ram
 
@@ -69,10 +72,10 @@ RUN mkdir /htapps/babel/logs
 RUN chmod 4777 /htapps/babel/logs
 
 RUN ln -s /htapps/babel /htapps/test.babel
-RUN cd /htapps/babel; git clone https://github.com/hathitrust/mdp-web.git
+RUN cd /htapps/babel
 
 COPY . /htapps/babel/imgsrv
 RUN ln -s imgsrv/vendor/common-lib/lib ../mdp-lib
-
+RUN ln -s imgsrv/web/common-web ../mdp-web
 
 CMD ["/htapps/babel/imgsrv/bin/startup_imgsrv"]
