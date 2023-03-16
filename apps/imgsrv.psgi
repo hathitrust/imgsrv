@@ -18,13 +18,15 @@ use SRV::Volume::Metadata;
 use SRV::Volume::HTML;
 
 use Utils::Settings;
-my $settings = Utils::Settings::load('imgsrv', 'imgsrv');
+our $settings = Utils::Settings::load('imgsrv', 'imgsrv');
 
 my $app = sub {
     my $env = shift;
     my $C = $$env{'psgix.context'};
     my $mdpItem = $C->get_object('MdpItem');
     my $item_type = lc $mdpItem->GetItemType();
+    $$env{'psgix.image.transformers'} = $$settings{transformers};
+    $$env{'psgix.image.verbose'}      = $$settings{verbose};
     Plack::Recursive::ForwardRequest->throw("/$item_type$$env{PATH_INFO}");
 };
 

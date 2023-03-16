@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Usage: startup_imgsrv
+# Usage: startup_imgsrv manager
 
 exec >> /tmp/imgsrv.out 2>> /tmp/imgsrv.err
 
@@ -8,10 +8,18 @@ NPROC=4
 SDRVIEW=full
 BIND=0.0.0.0:31028
 SCRIPT=$SDRROOT/imgsrv/cgi/imgsrv
+SERVER=${1:-FCGI}
 
 export SDR_VIEW
 
-/usr/bin/plackup -I $SDRROOT/plack-lib -E production \
-       -R $SCRIPT.psgi,$SCRIPT,$SDRROOT/imgsrv/bin/rdist.timestamp -s FCGI \
-       --manager=FCGI::ProcManager::HT --nproc $NPROC\
-       --listen $BIND $SCRIPT.psgi
+if [ $SERVER = 'FCGI' ]
+then
+       /usr/bin/plackup -I $SDRROOT/plack-lib -E production \
+              -R $SCRIPT.psgi,$SCRIPT,$SDRROOT/imgsrv/bin/rdist.timestamp -s FCGI \
+              --manager=FCGI::ProcManager::HT --nproc $NPROC\
+              --listen $BIND $SCRIPT.psgi
+else
+       /usr/bin/plackup -I $SDRROOT/plack-lib -E production \
+              -R $SCRIPT.psgi,$SCRIPT,$SDRROOT/imgsrv/bin/rdist.timestamp -s Starman \
+              --listen $BIND $SCRIPT.psgi
+fi

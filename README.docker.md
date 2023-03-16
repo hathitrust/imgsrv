@@ -14,16 +14,17 @@ $ git submodule init
 $ git submodule update
 ```
 
-And _for now_ copy the application specific SQL into the `mdp-lib` submodule so the `mariadb` service can see it:
-
-```
-$ cd imgsrv
-$ cp sql/*.sql ../vendor/common-lib/lib/sql
-```
-
 ## Running
 
-The docker setup has the imgsrv container running `startup_imgsrv` as a FastCGI service on port 31028.
+The `imgsrv` service will start up the "image" service using `startup_imgsrv` as a FastCGI service on port 31028.
+
+`apache-cgi` will start up `apache` configured to proxy API request to `imgsrv:31028` or the download applications via CGI on port 8888, e.g.
+
+* `http://localhost:8888/cgi/imgsrv/cover?id=test.pd_open`
+* `http://localhost:8888/cgi/imgsrv/image?id=test.pd_open&seq=1`
+* `http://localhost:8888/cgi/imgsrv/html?id=test.pd_open&seq=1`
+* `http://localhost:8888/cgi/imgsrv/download/pdf?id=test.pd_open&seq=1&attachment=0`
+
 
 Use a webserver for FastCGI like https://github.com/beberlei/fastcgi-serve to access the FastCGI app:
 
@@ -31,7 +32,6 @@ Use a webserver for FastCGI like https://github.com/beberlei/fastcgi-serve to ac
 
 Then:
 
-* `http://localhost:7777/cover?id=loc.ark:/13960/t5v69h717`
-* `http://localhost:7777/image?id=loc.ark:/13960/t5v69h717;seq=1`
-* `http://localhost:7777/html?id=loc.ark:/13960/t5v69h717;seq=1`
-
+* `http://localhost:7777/cover?id=test.pd_open`
+* `http://localhost:7777/image?id=test.pd_open&seq=1`
+* `http://localhost:7777/html?id=test.pd_open&seq=1`

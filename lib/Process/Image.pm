@@ -31,6 +31,8 @@ use Plack::Util::Accessor qw(
     watermark
     logfile
     tmpfilename
+    transformers
+    verbose
 );
 
 use Try::Tiny;
@@ -68,6 +70,11 @@ sub new {
     $self->format($$options{format} || 'image/jpeg');
     $self->quality($$options{quality} || 'default');
     $self->target_ppi($$options{target_ppi} || 0);
+
+    $self->transformers( $$options{transformers} || $Process::Globals::transformers );
+
+    $self->verbose( $$options{verbose} || 0 );
+
     $self;
 }
 
@@ -172,19 +179,39 @@ sub _run {
             $max = $max / 2;
         }
 
-        IPC::Run::run([
-            $Process::Globals::kdu_compress,
-            "-num_threads", "0", 
-            "Clevels=$nlev",
-            "Clayers=8",
-            "Creversible=no",
-            "Cuse_sop=yes",
-            "Cuse_eph=yes",
-            "Cmodes=RESET|RESTART|CAUSAL|ERTERM|SEGMARK",
-            "Corder=RLCP",
-            "-quiet", "-i", 
-            $self->tmpfilename, 
-            "-o", $jp2_tmpfilename, "-slope", "42988" ]);
+        if ( $self->transformers->{'image/jp2'} eq 'grok' ) {
+            IPC::Run::run([
+                $Process::Globals::grk_compress,
+                "-i", $self->tmpfilename,
+                "-o", $jp2_tmpfilename,
+                "-p", "RLCP",
+                "-n", $nlev,
+                "-SOP", "-EPH", "-M", 62, "-I", "-q", 32
+            ])
+        } else {
+            IPC::Run::run([
+                $Process::Globals::kdu_compress,
+                "-num_threads", "0", 
+                "Clevels=$nlev",
+                "Clayers=8",
+                "Creversible=no",
+                "Cuse_sop=yes",
+                "Cuse_eph=yes",
+                "Cmodes=RESET|RESTART|CAUSAL|ERTERM|SEGMARK",
+                "Corder=RLCP",
+                "-quiet", "-i", 
+                $self->tmpfilename, 
+                "-o", $jp2_tmpfilename, "-slope", "42988" ]);
+        }
+
+        if ( $self->verbose ) {
+            my $string = join(" : ", ( time() - $t0 ), map { ref($_) ? join(" ", @$_) : $_ } @commands) . "\n";
+            if ( $self->output->{mimetype} eq 'image/jp2' ) {
+                $string .= " + " . $self->transformers->{'image/jp2'} . " compression";
+            }
+            print STDERR $string . "\n";
+        }
+
         unlink $self->tmpfilename;
         $self->tmpfilename($jp2_tmpfilename);
     }
@@ -340,10 +367,10 @@ sub _setup_sizing {
 sub _setup_rotation {
     my $self = shift;
     return if ( $self->rotation == 0 );
-    if ( $self->source->{mimetype} eq 'image/jp2' && ( $self->rotation == 90 || $self->rotation == 270 ) ) {
-        ( $self->output->{metadata}->{width}, $self->output->{metadata}->{height} ) =
-            ( $self->output->{metadata}->{height}, $self->output->{metadata}->{width} );
-    }
+    # if ( $self->source->{mimetype} eq 'image/jp2' && ( $self->rotation == 90 || $self->rotation == 270 ) ) {
+    #     ( $self->output->{metadata}->{width}, $self->output->{metadata}->{height} ) =
+    #         ( $self->output->{metadata}->{height}, $self->output->{metadata}->{width} );
+    # }
 }
 
 sub _setup_format {
@@ -407,18 +434,30 @@ sub _process_source {
     } elsif ( $mimetype eq 'image/jpeg' ) {
         $self->_add_step([$Process::Globals::jpegtopnm, $filename]);
     } elsif ( $mimetype eq 'image/jp2' ) {
-        my @params = (
-            "-quiet",
-            "-i", $filename,
-            "-o", "$Process::Globals::stdout.bmp",
-            "-reduce", $self->output->{metadata}->{r},
-            "-num_threads", "0",
-        );
-        if ( $self->rotation > 0 && $self->rotation % 90 == 0 ) {
-            push @params, "-rotate", $self->rotation;
+        my @params;
+        my $cmd;
+
+        if ( $self->transformers->{'image/jp2'} eq 'grok' ) {
+            $cmd = $Process::Globals::grk_decompress;
+            @params = (
+                "-i", $filename,
+                "-o", "$Process::Globals::stdout.bmp",
+                "-r", $self->output->{metadata}->{r},
+                "-num_threads", "0",
+            );
+        } else {
+            $cmd = $Process::Globals::kdu_expand;
+            @params = (
+                "-quiet",
+                "-i", $filename,
+                "-o", "$Process::Globals::stdout.bmp",
+                "-reduce", $self->output->{metadata}->{r},
+                "-num_threads", "0",
+            );
         }
+
         $self->_add_step([
-            $Process::Globals::kdu_expand,
+            $cmd,
             @params,
         ]);
         $self->_add_step([$Process::Globals::bmptopnm]);
@@ -524,7 +563,6 @@ sub _process_region {
 
 sub _process_rotation {
     my $self = shift;
-    return if ( $self->source->{mimetype} eq 'image/jp2' && ( $self->rotation % 90 == 0 ) );
     return if ( $self->blank || $self->restricted );
     return if ( $self->rotation == 0 );
 

@@ -6,6 +6,9 @@ use File::Basename qw(dirname);
 $kdu_expand = qq{/l/local/bin/kdu_expand};
 $kdu_compress = qq{/l/local/bin/kdu_compress};
 
+$grk_decompress = qq{/usr/bin/grk_decompress};
+$grk_compress   = qq{/usr/bin/grk_compress};
+
 $NETPBM_ROOT = qq{/l/local/bin};
 $pamflip = qq{$NETPBM_ROOT/pamflip};
 $jpegtopnm = qq{$NETPBM_ROOT/jpegtopnm};
@@ -44,6 +47,10 @@ $restricted_label = qq{$static_path/graphics/restricted_label};
 $lock_icon = qq{$static_path/graphics/lock.png};
 
 $default_width = 680;
+
+### Default transformers
+$transformers = {};
+$$transformers{'image/jp2'} = 'grok';
 
 ### Process::Text
 

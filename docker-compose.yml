@@ -3,8 +3,9 @@ version: '3'
 services:
 
   # assumes imgsrv-sample-data has been checked out next to "imgsrv"
-  dev:
+  imgsrv:
     build: .
+    image: hathitrust-imgsrv
     volumes:
       - .:/htapps/babel/imgsrv
       - "../imgsrv-sample-data/sdr1:/sdr1"
@@ -14,8 +15,7 @@ services:
     environment:
       - SDRROOT=/htapps/babel
       - SDRDATAROOT=/sdr1
-      - HT_DEV=
-      - MARIADB_USER=ht_web
+      - HT_DEV=docker
       - REMOTE_ADDR=127.0.0.1
       - HTTP_HOST=127.0.0.1
     depends_on:
@@ -26,16 +26,39 @@ services:
     command: bash -c "/htapps/babel/imgsrv/bin/startup_imgsrv"
 
   solr-sdr-catalog:
-    image: hathitrust/catalog_solr_faker
-    restart: always
+    image: ghcr.io/hathitrust/catalog-solr-sample
+    ports:
+      - "9033:9033"
 
   mariadb:
-    image: mariadb
-    environment:
-      # MYSQL_RANDOM_ROOT_PASSWORD: 1
-      MYSQL_ROOT_PASSWORD: TIMTOWTDIBSCINABTE
+    image: ghcr.io/hathitrust/db-image:latest
+    restart: always
+    ports:
+      - 3306:3006
+
+  apache-cgi:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.apache
+    image: hathitrust-imsgsrv-apache
+    ports:
+      - "8888:80"
     volumes:
-      - ./vendor/common-lib/lib/sql:/docker-entrypoint-initdb.d/
+      - .:/htapps/babel/imgsrv
+      - ./docker/sites-available:/etc/apache2/sites-available
+      - "../imgsrv-sample-data/sdr1:/sdr1"
+      - "../imgsrv-sample-data/etc:/htapps/babel/etc"
+      - "../imgsrv-sample-data/watermarks:/htapps/babel/watermarks"
+      - "../imgsrv-sample-data:/tmp/imgsrv-sample-data"
+    depends_on:
+      - imgsrv
+      - mariadb
+      - solr-sdr-catalog
+    environment:
+      - SDRROOT=/htapps/babel
+      - SDRDATAROOT=/sdr1
+      - HT_DEV=docker
+    command: bash -c "/htapps/babel/imgsrv/docker/bin/apache.sh"
 
 volumes:
   # sdr1:
