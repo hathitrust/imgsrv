@@ -4,4 +4,6 @@ Everything but the kitchen sink.
 
 ### Development
 
-[Running imgsrv with Docker](./README.docker.md)
+See [babel-local-dev](https://github.com/hathitrust/babel-local-dev/) for an
+environment that allows running imgsrv alongside its dependencies locally in
+Docker.
