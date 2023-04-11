@@ -32,6 +32,7 @@ use Plack::Util::Accessor qw(
     watermark 
     max_dim
     is_partial 
+    include_images 
     attachment_filename
     id
 );
@@ -73,6 +74,7 @@ sub new {
     $self->watermark(1) unless ( defined $self->watermark );
     $self->target_ppi(0) unless ( defined $self->target_ppi );
     $self->searchable(1) unless ( defined $self->searchable );
+    $self->include_images(0) unless ( defined $self->include_images );
 
     $self->is_partial(0);
 
@@ -294,6 +296,7 @@ sub run {
         rotation => $self->rotation,
         target_ppi => $self->target_ppi,
         watermark => $self->watermark,
+        include_images => $self->include_images,
         # max_dim => $self->max_dim,
         pages => $self->pages,
         updater => $updater,
@@ -317,6 +320,8 @@ sub _fill_params {
         progress_filepath => undef,
         download_url => undef,
     );
+    # include_images is only possible using magic XYZZY option
+    $params{include_images} = undef if ( $ENV{XYZZY} );
 
     SRV::Utils::parse_env(\%params, [qw(file rotation format output_filename)], $req, $args);
 

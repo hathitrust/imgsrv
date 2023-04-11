@@ -86,7 +86,7 @@ sub generate {
 
     $updater->update(0);
 
-    $self->build_content();
+    $self->build_content($env);
 
     die "IMAGE BUNDLE CANCELLED" if ( $updater->is_cancelled );
 
@@ -96,6 +96,7 @@ sub generate {
 
 sub build_content {
     my $self = shift;
+    my ( $env ) = @_;
 
     my $updater = $self->updater;
     my $mdpItem = $self->mdpItem;
@@ -117,7 +118,7 @@ sub build_content {
         $i += 1;
         $updater->update($i);
 
-        $self->process_page_image($seq);
+        $self->process_page_image($env, $seq);
     }
 
     unlink $self->working_dir . "/process.log";
@@ -137,7 +138,7 @@ sub get_page_basename {
 
 sub process_page_image {
     my $self = shift;
-    my ( $seq) = @_;
+    my ( $env, $seq) = @_;
 
     my $extract_filename = $self->mdpItem->GetFilePathMaybeExtract($seq, 'imagefile');
 
@@ -166,6 +167,7 @@ sub process_page_image {
     # $processor->max_dim($max_dimension) if ( $max_dimension );
     $processor->quality($self->quality);
     $processor->blank($blank) if ( $blank );
+    $processor->transformers( $$env{'psgix.image.transformers'} ) if ( defined $$env{'psgix.image.transformers'} );
 
     $processor->process();
 }
