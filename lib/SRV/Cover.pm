@@ -99,6 +99,7 @@ sub run {
     $processor->restricted($restricted); # until covers really go live
     $processor->max_dim($max_dimension) if ( $max_dimension );
     $processor->quality($self->quality);
+    $processor->transformers( $$env{'psgix.image.transformers'} ) if ( defined $$env{'psgix.image.transformers'} );
     # $processor->blank($blank) if ( $blank );
 
     my $output = $processor->process();

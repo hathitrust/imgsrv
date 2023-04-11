@@ -123,7 +123,6 @@ sub process {
 
     # and then rename the output_file
     if ( $do_rename ) {
-        print STDERR "AHOY WUT? " . $self->output_filename . "\n";
         rename($self->output_filename . ".download", $self->output_filename) || die $!;
     }
 
