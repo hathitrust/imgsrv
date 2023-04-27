@@ -301,6 +301,7 @@ sub generate_pdf {
             $processor->quality($self->quality);
 
             $processor->max_dim($self->max_dim) if ( $self->max_dim );
+            $processor->transformers( $$env{'psgix.image.transformers'} ) if ( defined $$env{'psgix.image.transformers'} );
             $processor->logfile("$input_dir/process.log");
 
             my $efi_hr = $processor->process();

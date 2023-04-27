@@ -94,9 +94,10 @@ sub _authorize {
     unless ( $self->restricted ) {
         # technically the user has access but we need to 
         # limit resources for bundling to users in a current session
+        # unless you're using XYZZY=1 on the command line
         my $C = $$env{'psgix.context'};
         my $ses = $C->get_object('Session');
-        if ( $$ses{is_new} ) { $self->restricted(1); }
+        if ( $$ses{is_new} && ! $ENV{XYZZY} ) { $self->restricted(1); }
         elsif ( $self->format eq 'image/tiff' && $self->total_pages > 10 ) {
             $self->restricted(1);
         }

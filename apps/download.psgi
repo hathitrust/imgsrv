@@ -10,13 +10,15 @@ use Plack::Util;
 use Utils;
 
 use Utils::Settings;
-my $settings = Utils::Settings::load('imgsrv', 'download');
+our $settings = Utils::Settings::load('imgsrv', 'download');
 
 my $app = sub {
     my $env = shift;
     my $C = $$env{'psgix.context'};
     my $mdpItem = $C->get_object('MdpItem');
     my $item_type = lc $mdpItem->GetItemType();
+    $$env{'psgix.image.transformers'} = $$settings{transformers};
+    $$env{'psgix.image.verbose'} = $$settings{verbose};
     unless ( $$env{PATH_INFO} ) { $$env{PATH_INFO} = '/pdf'; }
     Plack::Recursive::ForwardRequest->throw("/$item_type$$env{PATH_INFO}");
 };

@@ -35,6 +35,7 @@ my @config = (
     "bundle_format=s",
     "target_ppi=s",
     "quality=s",
+    "include_images=s",
     "super",
     "force",
 );
