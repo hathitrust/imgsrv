@@ -118,6 +118,24 @@ builder {
         $res->redirect($uri);
         return $res->finalize;
     };
+
+    if ( $ENV{HT_DEV} ) {
+        mount "/info" => sub {
+            my $env  = shift;
+            my $req  = Plack::Request->new($env);
+            my $html = ['<html><body><table>'];
+            foreach my $key ( sort keys %$env ) {
+                next if ( ref( $$env{$key} ) );
+                push @$html, qq{<tr><th>$key</th><td>$$env{$key}</td></tr>};
+            }
+            push @$html, qq{</table></body></html>};
+            my $res = $req->new_response(200);
+            $res->content_type('text/html');
+            $res->body( join( "\n", @$html ) );
+            return $res->finalize;
+        };
+    }
+
     mount "/volume" => builder {
         mount "/image" => SRV::Image->new->to_app;
         mount "/thumbnail" => SRV::Image->new(mode => 'thumbnail', watermark => 0)->to_app;
