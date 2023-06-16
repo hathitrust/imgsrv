@@ -52,6 +52,21 @@ my $app = sub {
     } else {
         $status_path = join('/', $ROOT, Identifier::get_pairtree_id_with_namespace($id), $progress_basename);
     }
+
+    unless ( -d $status_path ) {
+        $response = Plack::Response->new(200);
+        $response->content_type(q{application/json});
+        $response->header('Access-Control-Allow-Origin' => '*');
+
+        my $status = {
+            status => 'DONE',
+            message => 'No download found'
+        };
+        $response->body(JSON::XS::encode_json($status));
+
+        return $response->finalize;
+    }
+
     opendir(my $status_dh, $status_path) || die "$status_path: $!";
 
     my $sort = sub {
