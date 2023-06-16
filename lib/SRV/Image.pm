@@ -48,6 +48,7 @@ sub new {
     $self->watermark(1) unless ( defined $self->watermark );
     $self->default_watermark($self->watermark);
     $self->quality('default') unless ( defined $self->quality );
+    $self->format('image/jpeg') unless ( $self->format );
 
     $self;
 }
@@ -62,9 +63,10 @@ sub run {
     my $mdpItem = $C->get_object('MdpItem');
     my $gId = $mdpItem->GetId();
 
-    $self->restricted(0) unless ( Debug::DUtils::under_server() );
+    ### $self->restricted(0) unless ( Debug::DUtils::under_server() );
+    # my $restricted = $self->restricted;
 
-    my $restricted = $self->restricted;
+    my $restricted;
     unless ( defined $restricted ) {
         # $restricted = $C->get_object('Access::Rights')->assert_final_access_status($C, $gId) ne 'allow';
         $restricted = $$env{'psgix.restricted'};
@@ -164,6 +166,8 @@ sub run {
     $processor->max_dim($max_dimension) if ( $max_dimension );
     $processor->quality($self->quality);
     $processor->blank($blank) if ( $blank );
+    $processor->transformers( $$env{'psgix.image.transformers'} ) if ( defined $$env{'psgix.image.transformers'} );
+    $processor->verbose( $$env{'psgix.image.verbose'} ) if ( defined $$env{'psgix.image.verbose'} );
 
     my $output = $processor->process();
 
@@ -306,7 +310,8 @@ sub _fill_params {
     }
 
     foreach my $param ( keys %params ) {
-        $self->$param($params{$param});
+        next unless ( $params{$param} );
+        $self->$param( $params{$param} );
     }
 }
 

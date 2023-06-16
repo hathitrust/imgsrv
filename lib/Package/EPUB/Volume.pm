@@ -106,7 +106,7 @@ sub generate {
 
     $updater->update(0);
 
-    $self->build_content();
+    $self->build_content($env);
 
     $self->build_toc($nav);
 
@@ -189,6 +189,7 @@ sub build_navigation {
 
 sub build_content {
     my $self = shift;
+    my ( $env ) = @_;
 
     my $updater = $self->updater;
     my $mdpItem = $self->mdpItem;
@@ -205,7 +206,7 @@ sub build_content {
 
         $has_content += 1;
 
-        my $xslt_params = $self->process_page_image($seq);
+        my $xslt_params = $self->process_page_image($env, $seq);
         $self->process_page_text($seq, $xslt_params);
     }
 }
@@ -411,7 +412,7 @@ sub get_page_basename {
 
 sub process_page_image {
     my $self = shift;
-    my ( $seq ) = @_;
+    my ( $env, $seq ) = @_;
     my $params = {};
     return $params unless ( $self->include_images );
 
@@ -423,6 +424,7 @@ sub process_page_image {
     $processor->output( filename => $self->pathname("images/$basename.jpg") );
     $processor->format("image/jpeg");
     $processor->size("100");
+    $processor->transformers( $$env{'psgix.image.transformers'} ) if ( defined $$env{'psgix.image.transformers'} );
     $processor->process();
     ( $$params{width}, $$params{height} ) = imgsize($processor->output->{filename});
     $$params{image_src} = "'../images/$basename.jpg'";

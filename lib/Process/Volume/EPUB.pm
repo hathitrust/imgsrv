@@ -22,6 +22,7 @@ use Plack::Util::Accessor qw(
     target_ppi 
     watermark
     watermark_filename 
+    include_images
     output_fh
     working_dir
     updater
@@ -103,6 +104,7 @@ sub process {
         handle => $self->handle,
         working_dir => $working_dir,
         pages => $self->pages,
+        include_images => ($self->include_images || 0),
         watermark => $self->watermark,
     ));
 
@@ -123,7 +125,6 @@ sub process {
 
     # and then rename the output_file
     if ( $do_rename ) {
-        print STDERR "AHOY WUT? " . $self->output_filename . "\n";
         rename($self->output_filename . ".download", $self->output_filename) || die $!;
     }
 
