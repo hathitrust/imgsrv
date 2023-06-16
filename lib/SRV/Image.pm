@@ -63,9 +63,10 @@ sub run {
     my $mdpItem = $C->get_object('MdpItem');
     my $gId = $mdpItem->GetId();
 
-    $self->restricted(0) unless ( Debug::DUtils::under_server() );
+    ### $self->restricted(0) unless ( Debug::DUtils::under_server() );
+    # my $restricted = $self->restricted;
 
-    my $restricted = $self->restricted;
+    my $restricted;
     unless ( defined $restricted ) {
         # $restricted = $C->get_object('Access::Rights')->assert_final_access_status($C, $gId) ne 'allow';
         $restricted = $$env{'psgix.restricted'};
