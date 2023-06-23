@@ -48,7 +48,6 @@ sub new {
     $self->watermark(1) unless ( defined $self->watermark );
     $self->default_watermark($self->watermark);
     $self->quality('default') unless ( defined $self->quality );
-    $self->format('image/jpeg') unless ( $self->format );
 
     $self;
 }
@@ -85,7 +84,7 @@ sub run {
     }
 
     my @features = $mdpItem->GetPageFeatures($file);
-    my $source_file_type = $self->format || $mdpItem->GetStoredFileType( $file );
+
     my $source_file_type = $mdpItem->GetStoredFileType( $file );
     if ( ! $source_file_type ) { push @features, 'MISSING_PAGE'; $source_file_type = 'jpg'; }
 
@@ -231,11 +230,14 @@ sub call {
     my $disposition = $req->param('attachment') eq '1' ? "attachment" : "inline";
     $res->header('Content-disposition', qq{$disposition; filename=$attachment_filename});
 
-    if ( $self->tracker ) {
-        my $value = $req->cookies->{tracker} || '';
+    if ( my $tracker = $self->tracker ) {
+        my $all_trackers = $req->cookies->{tracker} || '';
+        unless ( $all_trackers =~ m,$tracker, ) {
+            $all_trackers .= $tracker;
+        }
         $res->cookies->{tracker} = {
-            value => $value . $self->tracker,
-            path => '/',
+            value   => $all_trackers,
+            path    => '/',
             expires => time + 24 * 60 * 60,
         };
     }
@@ -312,6 +314,11 @@ sub _fill_params {
     foreach my $param ( keys %params ) {
         next unless ( $params{$param} );
         $self->$param( $params{$param} );
+    }
+
+    # force default processing if unsupplied
+    foreach my $param ( qw/format size force tracker/ ) {
+        $self->$param(undef) unless ( $params{$param} );
     }
 }
 
