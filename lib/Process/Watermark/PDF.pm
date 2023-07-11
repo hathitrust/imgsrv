@@ -232,11 +232,10 @@ sub setup_colophon_page {
 
     }
 
-    my $coverpage_image = qq{$SRV::Globals::gHtmlDir/common-web/graphics/HathiTrustDL_coverpage.jpg};
+    my $coverpage_image = qq{$SRV::Globals::gHtmlDir/graphics/hathitrust-logo-stacked-orange-white-rgb-coverpage.jpg};
 
     my ( $image_w, $image_h ) = imgsize($coverpage_image);
-    $image_h = $y1 / 3;
-    $image_w = $x1 / 3;
+    ( $image_w, $image_h ) = ( $x1 * 0.5, $x1 * 0.5 / ( $image_w / $image_h ));
 
     my ( $center_x, $center_y ) = ( $x1 / 2, $y1 / 2 );
     my $image_data = $watermark_pdf->image_jpeg($coverpage_image);
