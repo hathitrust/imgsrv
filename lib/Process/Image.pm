@@ -275,12 +275,19 @@ sub _setup_sizing {
     # deal with $size = full
     if ( $size eq 'full' ) {
         $size = q{res:0};
-    } elsif ( $size =~ m,^\d+$, || $size =~ m,^size:, ) {
+    } elsif ( $size =~ m,^h?\d+$, || $size =~ m,^size:, ) {
         # PT format
         $size =~ s,^size:,,;
         $pt_size = $size;
-        $size = $size / 100;
-        $size = floor($Process::Globals::default_width * $size) . ",";
+        if ( $size =~ m,^h, ) {
+            # size by height
+            $size = substr($size, 1);
+            $size = $size / 100;
+            $size = "," . floor( $Process::Globals::default_height * $size );
+        } else {
+            $size = $size / 100;
+            $size = floor( $Process::Globals::default_width * $size ) . ",";
+        }
     }
 
     my $scale_cmd; my $size_dim;

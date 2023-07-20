@@ -359,16 +359,18 @@ sub _validate_params_size {
 
     my $size = $self->size();
     my $is_valid = 0;
-    if ( $size =~ m,^\d+$, ) {
+    if ( $size =~ m,^h?\d+$, ) {
         # pt "size" parameter
-        unless ( exists( $SRV::Globals::gSizes{$size}) ) {
+        my ( $prefix, $check_size ) = $size =~ m,(h?)(\d+),;
+        unless ( exists( $SRV::Globals::gSizes{$check_size}) ) {
             foreach my $key ( sort { $a <=> $b } keys %SRV::Globals::gSizes ) {
                 if ( $key > $size ) {
-                    $size = $key;
+                    $check_size = $key;
                     last;
                 }
             }
         }
+        $size = "$prefix$check_size";
         $is_valid = 1;
     } elsif ( $size eq 'full' || $size =~ m{^\d+,$} || $size =~ m{^,\d+$} || $size =~ m{pct:\d+} || $size =~ m{^\!?\d+,\d+$} || $size =~ m{res:\d+} || $size =~ m{ppi:\d+$} ) {
         $is_valid = 1;

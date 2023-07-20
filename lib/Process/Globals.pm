@@ -47,6 +47,7 @@ $restricted_label = qq{$static_path/graphics/restricted_label};
 $lock_icon = qq{$static_path/graphics/lock.png};
 
 $default_width = 680;
+$default_height = 1080;
 
 ### Default transformers
 $transformers = {};
