@@ -317,7 +317,7 @@ sub _fill_params {
     }
 
     # force default processing if unsupplied
-    foreach my $param ( qw/format size force tracker/ ) {
+    foreach my $param ( qw/format size force tracker rotation/ ) {
         $self->$param(undef) unless ( $params{$param} );
     }
 }
