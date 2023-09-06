@@ -70,7 +70,8 @@ subtest "imgsrv.psgi" => sub {
 };
 
 TODO: {
-  todo_skip "Don't know yet how to test the download mount", 1;
+  todo_skip "As a CGI script, download.psgi dynamically loads its controllers, " .
+    "and this mechanism conflicts with the from_psgi approach that Plack::Test uses under the hood.", 1;
   # Silence uninitialized complaint in lib/SRV/Volume/Base.pm
   $ENV{SERVER_NAME} = 'localhost';
   $ENV{SERVER_PORT} = 0;
