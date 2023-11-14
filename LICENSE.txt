@@ -574,7 +574,6 @@ END OF TERMS AND CONDITIONS
 ## Font::TTF via https://metacpan.org/release/MHOSKEN/Font-TTF-1.05
 ## Builder via https://metacpan.org/release/DRAEGTUN/Builder-0.05
 ## Image::Info:TIFF via https://metacpan.org/release/SREZIC/Image-Info-1.39
-## Net::Google::Analytics::MeasurementProtocol via https://metacpan.org/release/GARU/Net-Google-Analytics-MeasurementProtocol-0.02
 
 Artistic License 2.0
  
