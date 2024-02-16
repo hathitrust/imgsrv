@@ -102,6 +102,10 @@ builder {
                      ;
     }
 
+    # The "+" indicates this is a complete class name, and we shouldn't prefix
+    # it with 'Plack::Middleware::"
+    enable "+SRV::Metrics";
+    #enable match_if !path(qr,/metrics,), "+SRV::Prolog", app_name => 'imgsrv';
     enable "+SRV::Prolog", app_name => 'imgsrv';
     enable "Recursive";
 
@@ -150,6 +154,10 @@ builder {
         mount "/cover" => $covers_app;
         mount "/html" => SRV::Article::HTML->new;
         # mount "/file" => ...;
-    }
+    };
+    mount "/metrics" => sub {
+      my $env = shift;
+      return $env->{'psgix.metrics'}->call_app($env);
+    };
 
 };
