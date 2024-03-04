@@ -157,7 +157,7 @@ builder {
     };
     mount "/metrics" => sub {
       my $env = shift;
-      return $env->{'psgix.metrics'}->call_app($env);
+      return $env->{'psgix.metrics'}->render;
     };
 
 };

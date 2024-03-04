@@ -3,7 +3,7 @@ package SRV::Metrics;
 use strict;
 use parent qw(Plack::Middleware);
 
-use Net::Prometheus;
+use Prometheus::Tiny::Shared;
 use Plack::Request;
 use Time::HiRes qw(time);
 
@@ -11,8 +11,8 @@ sub new {
   my $class = shift;
   my $self = $class->SUPER::new(@_);
 
-  $self->{prometheus} = Net::Prometheus->new();
-  $self->{metrics_app} = $self->{prometheus}->psgi_app();
+  warn("Setting up metrics (in pid $$)");
+  $self->{prom} = Prometheus::Tiny::Shared->new;
   $self->setup_metrics;
 
   return $self;
@@ -20,25 +20,19 @@ sub new {
 
 sub setup_metrics {
   my $self = shift;
-  my $prom = $self->{prometheus};
-  my $metrics = {};
+  my $prom = $self->{prom};
 
-  warn("setting up metrics");
-
-  $prom->register(Net::Prometheus::ProcessCollector->new());
-  $metrics->{requests} = $prom->new_counter(
-    name => "imgsrv_requests",
+  $prom->declare(
+    "imgsrv_requests",
+    type => "counter",
     help => "number of handled requests",
-    labels => ['path_info','response_code']
   );
 
-  $metrics->{request_time} = $prom->new_histogram(
-    name => "imgsrv_request_seconds",
+  $prom->declare(
+    "imgsrv_request_seconds",
+    type => "histogram",
     help => "Summary request processing time",
-    labels => ['path_info','response_code']
   );
-
-  $self->{metrics} = $metrics;
 }
 
 # Mostly cribbed from SRV::Prolog and the Plack::Middleware info
@@ -59,11 +53,10 @@ sub call {
 
 }
 
-sub call_app {
-  # TODO: Any cleaner way to do this?
-  my ($self, $env) = @_;
+sub render {
+  my $self = shift;
 
-  return &{$self->{metrics_app}}($env);
+  return [ 200, [ 'Content-Type' => 'text/plain' ], [ $self->{prom}->format ] ];
 }
 
 sub finalize {
@@ -77,12 +70,9 @@ sub finalize {
   };
 
   $labels->{path_info} = $req->path_info unless $response_code == '404';
-  print "LABELS: \n";
-  use Data::Dumper;
-  print Dumper($labels);
 
-  $self->{metrics}{request_time}->observe($labels, time() - $start);
-  $self->{metrics}{requests}->inc( $labels );
+  $self->{prom}->histogram_observe("imgsrv_request_seconds", time() - $start, $labels);
+  $self->{prom}->inc( "imgsrv_requests", $labels );
 }
 
 # counter: cache hits
