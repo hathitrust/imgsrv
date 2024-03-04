@@ -105,8 +105,8 @@ builder {
     # The "+" indicates this is a complete class name, and we shouldn't prefix
     # it with 'Plack::Middleware::"
     enable "+SRV::Metrics";
-    #enable match_if !path(qr,/metrics,), "+SRV::Prolog", app_name => 'imgsrv';
-    enable "+SRV::Prolog", app_name => 'imgsrv';
+    enable match_if path('!',qr,/metrics,), "+SRV::Prolog", app_name => 'imgsrv';
+    #enable "+SRV::Prolog", app_name => 'imgsrv';
     enable "Recursive";
 
     mount "/" => $app;
