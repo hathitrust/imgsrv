@@ -33,6 +33,18 @@ sub setup_metrics {
     type => "histogram",
     help => "Summary request processing time",
   );
+
+  $prom->declare(
+    "imgsrv_prolog_seconds",
+    type => "histogram",
+    help => "Summary processing time in prolog"
+  );
+
+  $prom->declare(
+    "imgsrv_prolog_requests",
+    type => "counter",
+    help => "Number of times prolog is called"
+  );
 }
 
 # Mostly cribbed from SRV::Prolog and the Plack::Middleware info
