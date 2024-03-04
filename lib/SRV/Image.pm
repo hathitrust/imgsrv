@@ -37,6 +37,7 @@ use SRV::Utils;
 use Utils;
 
 use Scalar::Util;
+use Time::HiRes qw();
 
 use Cwd ();
 
@@ -54,6 +55,8 @@ sub new {
 
 sub run {
     my ( $self, $env, %args ) = @_;
+
+    my $start = Time::HiRes::time();
 
     $self->_fill_params($env, \%args);
     $self->_validate_params($env);
@@ -122,6 +125,11 @@ sub run {
                 print STDERR "could not open source metadata - $err\n";
             }
         }
+
+        if(my $metrics = $C->{Metrics}) {
+          $metrics->observe("imgsrv_srv_image_seconds",Time::HiRes::time() - $start,{ cache => "hit" });
+        }
+
         return { filename => $output_filename, mimetype => $content_type,
                  metadata => { width => $width, height => $height },
                  source_metadata => $source_metadata };
@@ -151,6 +159,9 @@ sub run {
 
     my $processor = new Process::Image;
 
+    if($env->{'psgix.metrics'}) {
+      $processor->metrics($env->{'psgix.metrics'});
+    }
     $processor->mdpItem($mdpItem);
     $processor->source( filename => $source_filename);
     $processor->output( filename => $output_filename );
@@ -171,6 +182,9 @@ sub run {
     my $output = $processor->process();
 
     $self->_maybe_cache_source_metadata($output, $metadata_filename);
+    if(my $metrics = $env->{'psgix.metrics'}) {
+      $metrics->observe("imgsrv_srv_image_seconds",Time::HiRes::time() - $start,{ cache => "miss" });
+    }
 
     return $output;
 }

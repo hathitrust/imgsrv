@@ -23,15 +23,33 @@ sub setup_metrics {
   my $prom = $self->{prom};
 
   $prom->declare(
-    "imgsrv_requests",
-    type => "counter",
-    help => "number of handled requests",
-  );
-
-  $prom->declare(
     "imgsrv_request_seconds",
     type => "histogram",
     help => "Summary request processing time",
+  );
+
+  $prom->declare(
+    "imgsrv_prolog_seconds",
+    type => "histogram",
+    help => "Summary processing time in prolog"
+  );
+
+  $prom->declare(
+    "mdpitem_get_mdpitem_seconds",
+    type => "histogram",
+    help => "Summary fetch mdpitem metadata time"
+  );
+
+  $prom->declare(
+    "imgsrv_srv_image_seconds",
+    type => "histogram",
+    help => "Summary time spent in SRV::Image::run"
+  );
+
+  $prom->declare(
+    "imgsrv_process_image_seconds",
+    type => "histogram",
+    help => "Summary time spent in Process::Image::run"
   );
 }
 
@@ -53,8 +71,20 @@ sub call {
 
 }
 
+sub observe {
+  my $self = shift;
+  $self->{prom}->histogram_observe(@_);
+}
+
+sub add {
+  my $self = shift;
+  $self->{prom}->add(@_);
+}
+
 sub render {
   my $self = shift;
+
+  # TODO: can we get metrics via getrusage() for all children?
 
   return [ 200, [ 'Content-Type' => 'text/plain' ], [ $self->{prom}->format ] ];
 }
@@ -71,8 +101,7 @@ sub finalize {
 
   $labels->{path_info} = $req->path_info unless $response_code == '404';
 
-  $self->{prom}->histogram_observe("imgsrv_request_seconds", time() - $start, $labels);
-  $self->{prom}->inc( "imgsrv_requests", $labels );
+  $self->observe("imgsrv_request_seconds", time() - $start, $labels);
 }
 
 # counter: cache hits

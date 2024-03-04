@@ -9,6 +9,7 @@ use Plack::Util::Accessor qw( app_name );
 use Debug::DUtils;
 
 use CGI::PSGI;
+use Time::HiRes qw(time);
 
 {
     package Auth::Auth::PSGI;
@@ -96,8 +97,12 @@ sub cleanup_context {
 sub setup_context {
     my ( $self, $env ) = @_;
 
+    my $start = time();
     my $C = new Context;
     my $req = Plack::Request->new($env);
+
+    my $metrics = $env->{'psgix.metrics'};
+    $C->set_object('Metrics', $metrics) if $metrics;
 
     my $app = new App($C, $self->app_name);
     $C->set_object('App', $app);
@@ -154,6 +159,8 @@ sub setup_context {
     my $mdpItem =
         MdpItem->GetMdpItem($C, $id, $itemFileSystemLocation);
     $C->set_object('MdpItem', $mdpItem);
+
+    $metrics->observe("imgsrv_prolog_seconds", time() - $start) if $metrics;
 
     $$env{'psgix.context'} = $C;
 }
