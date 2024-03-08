@@ -23,12 +23,6 @@ sub setup_metrics {
   my $prom = $self->{prom};
 
   $prom->declare(
-    "imgsrv_requests",
-    type => "counter",
-    help => "number of handled requests",
-  );
-
-  $prom->declare(
     "imgsrv_request_seconds",
     type => "histogram",
     help => "Summary request processing time",
@@ -41,9 +35,21 @@ sub setup_metrics {
   );
 
   $prom->declare(
-    "imgsrv_prolog_requests",
-    type => "counter",
-    help => "Number of times prolog is called"
+    "mdpitem_get_mdpitem_seconds",
+    type => "histogram",
+    help => "Summary fetch mdpitem metadata time"
+  );
+
+  $prom->declare(
+    "imgsrv_srv_image_seconds",
+    type => "histogram",
+    help => "Summary time spent in SRV::Image::run"
+  );
+
+  $prom->declare(
+    "imgsrv_process_image_seconds",
+    type => "histogram",
+    help => "Summary time spent in Process::Image::run"
   );
 }
 
@@ -65,6 +71,11 @@ sub call {
 
 }
 
+sub observe {
+  my $self = shift;
+  $self->{prom}->histogram_observe(@_);
+}
+
 sub render {
   my $self = shift;
 
@@ -83,8 +94,7 @@ sub finalize {
 
   $labels->{path_info} = $req->path_info unless $response_code == '404';
 
-  $self->{prom}->histogram_observe("imgsrv_request_seconds", time() - $start, $labels);
-  $self->{prom}->inc( "imgsrv_requests", $labels );
+  $self->observe("imgsrv_request_seconds", time() - $start, $labels);
 }
 
 # counter: cache hits

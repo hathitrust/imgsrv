@@ -101,6 +101,9 @@ sub setup_context {
     my $C = new Context;
     my $req = Plack::Request->new($env);
 
+    my $metrics = $env->{'psgix.metrics'};
+    $C->set_object('Metrics', $metrics) if $metrics;
+
     my $app = new App($C, $self->app_name);
     $C->set_object('App', $app);
 
@@ -157,9 +160,7 @@ sub setup_context {
         MdpItem->GetMdpItem($C, $id, $itemFileSystemLocation);
     $C->set_object('MdpItem', $mdpItem);
 
-    my $prom = $env->{'psgix.metrics'}{prom};
-    $prom->histogram_observe("imgsrv_prolog_seconds", time() - $start);
-    $prom->inc( "imgsrv_prolog_requests");
+    $metrics->observe("imgsrv_prolog_seconds", time() - $start) if $metrics;
 
     $$env{'psgix.context'} = $C;
 }
