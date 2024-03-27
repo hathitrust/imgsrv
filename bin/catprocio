@@ -1,0 +1,12 @@
+#!/bin/bash
+
+pid=$1
+
+# ensure given a numeric process ID
+[[ "$pid" =~ ^[0-9]+$ ]] || exit 1
+
+# check that parent of given pid is parent of this process
+parent=$(cut -f 4 -d ' ' "/proc/$pid/stat")
+[[ "$parent" == "$PPID" ]] || exit 1
+
+cat "/proc/$pid/io"
