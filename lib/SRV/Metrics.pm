@@ -76,8 +76,15 @@ sub observe {
   $self->{prom}->histogram_observe(@_);
 }
 
+sub add {
+  my $self = shift;
+  $self->{prom}->add(@_);
+}
+
 sub render {
   my $self = shift;
+
+  # TODO: can we get metrics via getrusage() for all children?
 
   return [ 200, [ 'Content-Type' => 'text/plain' ], [ $self->{prom}->format ] ];
 }
