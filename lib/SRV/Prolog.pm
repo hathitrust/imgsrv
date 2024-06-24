@@ -44,6 +44,7 @@ use Identifier;
 use Scalar::Util;
 use Try::Tiny;
 
+use Metrics;
 use Utils;
 
 # Return codes from ValidityChecks()
@@ -101,9 +102,6 @@ sub setup_context {
     my $C = new Context;
     my $req = Plack::Request->new($env);
 
-    my $metrics = $env->{'psgix.metrics'};
-    $C->set_object('Metrics', $metrics) if $metrics;
-
     my $app = new App($C, $self->app_name);
     $C->set_object('App', $app);
 
@@ -160,7 +158,7 @@ sub setup_context {
         MdpItem->GetMdpItem($C, $id, $itemFileSystemLocation);
     $C->set_object('MdpItem', $mdpItem);
 
-    $metrics->observe("imgsrv_prolog_seconds", time() - $start) if $metrics;
+    Metrics->new->observe("imgsrv_prolog_seconds", time() - $start);
 
     $$env{'psgix.context'} = $C;
 }

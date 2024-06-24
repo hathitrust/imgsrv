@@ -3,7 +3,7 @@ package SRV::Metrics;
 use strict;
 use parent qw(Plack::Middleware);
 
-use Prometheus::Tiny::Shared;
+use Metrics;
 use Plack::Request;
 use Time::HiRes qw(time);
 
@@ -12,7 +12,7 @@ sub new {
   my $self = $class->SUPER::new(@_);
 
   warn("Setting up metrics (in pid $$)");
-  $self->{prom} = Prometheus::Tiny::Shared->new;
+  $self->{prom} = Metrics->new;
   $self->setup_metrics;
 
   return $self;
@@ -51,6 +51,18 @@ sub setup_metrics {
     type => "histogram",
     help => "Summary time spent in Process::Image::run"
   );
+
+  $prom->declare(
+    "utils_extract_run_seconds",
+    type => "histogram",
+    help => "Help string for utils_extract_run_seconds"
+  );
+
+  $prom->declare(
+    "utils_extract_extracted_size_bytes",
+    type => "counter",
+    help => "Help string for utils_extract_extracted_size_bytes"
+  );
 }
 
 # Mostly cribbed from SRV::Prolog and the Plack::Middleware info
@@ -71,9 +83,10 @@ sub call {
 
 }
 
+# These wrappers are likely unnecessary given that the mdp-lib Metrics object is a singleton. 
 sub observe {
   my $self = shift;
-  $self->{prom}->histogram_observe(@_);
+  $self->{prom}->observe(@_);
 }
 
 sub add {

@@ -42,6 +42,8 @@ use Process::Globals;
 
 use Time::HiRes qw(time);
 
+use Metrics;
+
 our $MIN_IMAGE_SIZE = 5;
 
 our $mimetypes = MIME::Types->new;
@@ -216,9 +218,7 @@ sub _run {
         unlink $self->tmpfilename;
         $self->tmpfilename($jp2_tmpfilename);
     }
-    if(my $metrics = $self->metrics) {
-      $metrics->observe("imgsrv_process_image_seconds",time()-$t0, { mimetype => $self->output->{mimetype} });
-    }
+    Metrics->new->observe("imgsrv_process_image_seconds",time()-$t0, { mimetype => $self->output->{mimetype} });
 
     ### print STDERR "DELTA: ", ( time() - $t0 ), "\n";
 

@@ -39,6 +39,8 @@ use Utils;
 use Scalar::Util;
 use Time::HiRes qw();
 
+use Metrics;
+
 use Cwd ();
 
 sub new {
@@ -126,9 +128,7 @@ sub run {
             }
         }
 
-        if(my $metrics = $C->{Metrics}) {
-          $metrics->observe("imgsrv_srv_image_seconds",Time::HiRes::time() - $start,{ cache => "hit" });
-        }
+        Metrics->new->observe("imgsrv_srv_image_seconds",Time::HiRes::time() - $start,{ cache => "hit" });
 
         return { filename => $output_filename, mimetype => $content_type,
                  metadata => { width => $width, height => $height },
@@ -159,9 +159,6 @@ sub run {
 
     my $processor = new Process::Image;
 
-    if($env->{'psgix.metrics'}) {
-      $processor->metrics($env->{'psgix.metrics'});
-    }
     $processor->mdpItem($mdpItem);
     $processor->source( filename => $source_filename);
     $processor->output( filename => $output_filename );
@@ -182,9 +179,7 @@ sub run {
     my $output = $processor->process();
 
     $self->_maybe_cache_source_metadata($output, $metadata_filename);
-    if(my $metrics = $env->{'psgix.metrics'}) {
-      $metrics->observe("imgsrv_srv_image_seconds",Time::HiRes::time() - $start,{ cache => "miss" });
-    }
+    Metrics->new->observe("imgsrv_srv_image_seconds",Time::HiRes::time() - $start,{ cache => "miss" });
 
     return $output;
 }
