@@ -1,3 +1,6 @@
+> [!IMPORTANT]  
+> Moved to github.com/hathitrust/babel/tree/main/imgsrv
+
 ## HathiTrust Image API (imgsrv)
 
 Everything but the kitchen sink.
